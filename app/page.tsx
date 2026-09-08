@@ -19,7 +19,7 @@ const nav = [{href:'/', label:'Dashboard', icon:Home},{href:'/syllabus', label:'
 function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname(); const router = useRouter()
   return <div className="app-shell">
-    <header className="topbar"><div className="brand-mark">S</div><div className="welcome"><span>Welcome back,</span><strong>Sarah</strong></div><button className="class-pill">Lucas – Primary 2 <ChevronDown size={13}/></button><button className="icon-btn"><Bell size={18}/></button></header>
+    <header className="topbar"><div className="brand-mark">S</div><div className="welcome"><span>Welcome back,</span><strong>Sarah</strong></div><button className="class-pill">Lucas – Primary 2 <ChevronDown size={13}/></button><nav className="desktop-nav" aria-label="Primary navigation">{nav.map(({href,label})=><button key={href} onClick={()=>router.push(href)} className={path===href?'active':''}>{label}</button>)}</nav><button className="icon-btn"><Bell size={18}/></button></header>
     <main className="main-content">{children}</main>
     <nav className="bottom-nav">{nav.map(({href,label,icon:Icon})=><button key={href} onClick={()=>router.push(href)} className={path===href?'active':''}><Icon size={19}/><span>{label}</span></button>)}</nav>
   </div>
