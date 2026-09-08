@@ -28,6 +28,19 @@ button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}.deskt
 .results-page .table-head span{font-size:8px;padding-top:8px;padding-bottom:8px}
 .results-page .result-actions{max-width:420px;margin:12px auto 0;gap:8px}
 .results-page .soft-button,.results-page .dark-button{min-height:32px;border-radius:17px;font-size:9px;padding:7px 10px}
-@media(max-width:699px){.topbar .brand-lockup{display:none}.topbar{justify-content:flex-end}.topbar-tools{width:100%;justify-content:flex-end}.topbar-tools .profile-chip{display:none}}
+/* Mobile follows the app reference: learner identity stays anchored at the top-left,
+   with class selection and alerts grouped on the right. */
+@media(max-width:699px){
+  .topbar .brand-lockup{display:none}
+  .topbar{height:64px;padding:10px 18px;justify-content:space-between;gap:10px}
+  .topbar-tools{width:100%;min-width:0;justify-content:flex-end;gap:9px}
+  .topbar-tools .profile-chip{display:flex;order:-1;margin-right:auto;flex:0 1 auto;min-width:0}
+  .profile-chip>span:last-child{min-width:0}
+  .profile-chip small{font-size:8px;white-space:nowrap}
+  .profile-chip strong{font-size:10px;white-space:nowrap}
+  .profile-avatar{width:29px;height:29px;flex:none}
+  .class-pill{padding:7px 8px;font-size:9px;white-space:nowrap}
+  .icon-btn{padding:4px;flex:none}
+}
 @media(min-width:700px){.results-page{min-height:calc(100vh - 48px);max-width:1180px;margin:24px auto;border:1px solid #d8e4df;border-radius:22px;padding:52px 40px;background:#f7f3ec}.results-page .section-heading,.results-page .score-card,.results-page .table-title,.results-page .results-table,.results-page .result-actions{max-width:620px}.results-page .table-row{min-height:48px}.results-page .table-row span{font-size:12px}.results-page .table-head span{font-size:10px}}
 .detail-hero,.payment-card,.settings-card{background:#fff;border:1px solid #e7efeb;border-radius:16px;padding:20px;box-shadow:0 6px 20px #8f786012}.detail-hero{margin-bottom:14px}.detail-hero h2,.payment-card h2,.settings-card h2{margin:10px 0 7px;font-size:18px}.detail-hero p,.payment-card p,.settings-card p{color:#7b8e88;line-height:1.55;font-size:12px;margin:0}.detail-section{margin-top:16px}.detail-section h2{font-size:13px;margin:0 0 9px}.character-list{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}.character-item{display:flex;align-items:center;gap:9px;padding:10px;border:1px solid #e5eee9;border-radius:10px;background:#fbfcfa}.character-item strong{font-size:18px}.character-item small{color:#82928d;font-size:9px}.payment-options{display:grid;gap:9px;margin:16px 0}.payment-option{display:flex;justify-content:space-between;align-items:center;padding:13px;border:1px solid #dfeae4;border-radius:10px}.payment-option.selected{border:2px solid #4b897d;background:#f2f8f4}.payment-option strong,.payment-option small{display:block}.payment-option small{color:#83938e;font-size:10px;margin-top:3px}.payment-total{display:flex;justify-content:space-between;padding-top:14px;border-top:1px solid #e7efeb;margin-top:6px}.full-button{width:100%;margin-top:16px}.notification-item{display:flex;gap:11px;padding:14px 0;border-bottom:1px solid #e7efeb}.notification-item:last-child{border-bottom:0}.notification-item p{margin:3px 0 0;color:#7b8e88;font-size:11px;line-height:1.45}.notification-dot{width:8px;height:8px;border-radius:50%;background:#d66c67;margin-top:5px;flex:none}.benefit-list{display:grid;gap:10px;margin:16px 0}.benefit-item{display:flex;gap:10px;align-items:flex-start;padding:11px;border-radius:10px;background:#f2f8f4;color:#3e766c}.benefit-item span{color:#536c66;font-size:11px;line-height:1.4}.profile-field{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid #e7efeb;font-size:12px}.profile-field:last-child{border-bottom:0}.profile-field small{display:block;color:#84938f;margin-top:3px;font-size:10px}
