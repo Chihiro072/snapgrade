@@ -64,7 +64,7 @@ export function AppShell({
       className={`mx-auto min-h-screen w-full max-w-[430px] bg-[#f7f3ec] ${showBottomNav ? "pb-[78px]" : "pb-0"} text-[#253635] md:my-6 md:min-h-[calc(100vh-48px)] md:max-w-[1180px] md:overflow-hidden md:rounded-[22px] md:border md:border-[#e6ded2] md:pb-0 md:shadow-[0_18px_48px_#8f786018]`}
     >
       <header
-        className={`${desktopNavOnly ? "hidden md:flex" : "flex"} h-[70px] items-center gap-2 border-b border-[#edf1ee] bg-white px-5 md:h-[76px] md:px-8`}
+        className={`${desktopNavOnly ? "hidden md:flex" : "flex"} h-[70px] items-center gap-2 border-b-0 !bg-[#f7f3ec] px-5 md:h-[76px] md:border-b md:border-[#edf1ee] md:!bg-white md:px-8`}
       >
         <button
           onClick={() => router.push("/")}
