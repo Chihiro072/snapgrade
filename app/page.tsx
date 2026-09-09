@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 
 const teal = "#2f7168";
+const masteryChange = "+3.1% this month";
 const lessons = [
   {
     week: "Week 4",
@@ -174,7 +175,7 @@ function Dashboard() {
             MASTERY RATE <CircleCheckBig size={22} strokeWidth={2.4} className="!text-[#648c82]" />
           </span>
           <strong>82.4%</strong>
-          <small>+3.1% this month</small>
+          <small className={masteryChange.startsWith("-") ? "!text-[#d56d67]" : "!text-[#4f9278]"}>{masteryChange}</small>
         </div>
         <div className="stat-card">
           <span>
