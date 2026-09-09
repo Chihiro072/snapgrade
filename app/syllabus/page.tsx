@@ -58,7 +58,7 @@ export default function SyllabusPage() {
         {["P1", "P2", "P3", "P4", "P5", "P6"].map((level) => (
           <button
             key={level}
-            className={`size-[35px] rounded-lg border text-[10px] ${level === "P2" ? "border-[#2f7168] bg-[#2f7168] font-bold text-white" : "border-[#e1ebe6] bg-white text-[#8ba09a]"}`}
+          className={`h-10 w-[68px] rounded-full border text-base shadow-[0_2px_7px_#31584b14] ${level === "P2" ? "!border-[#2f7168] !bg-[#2f7168] font-bold !text-white" : "!border-[#e1ebe6] !bg-white font-semibold text-[#506762]"}`}
           >
             {level}
           </button>

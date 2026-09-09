@@ -45,7 +45,7 @@ export default function HistoryPage() {
           <button
             key={title}
             onClick={() => router.push("/results")}
-            className="flex w-full items-center gap-3 rounded-2xl border border-[#e7efeb] bg-white p-4 text-left shadow-[0_5px_18px_#8f786012]"
+            className="flex w-full items-center gap-3 rounded-2xl border border-[#e7efeb] !bg-white p-4 text-left shadow-[0_5px_18px_#8f786012]"
           >
             <span className="grid size-[34px] shrink-0 place-items-center rounded-[9px] bg-[#e8f2ed] text-[#2f7168]">
               <Icon size={18} />
