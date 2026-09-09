@@ -20,7 +20,17 @@ const navigation = [
   { href: "/premium", label: "Premium", icon: Star },
 ];
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  showBottomNav = true,
+  desktopNavOnly = false,
+  unpadded = false,
+}: {
+  children: ReactNode;
+  showBottomNav?: boolean;
+  desktopNavOnly?: boolean;
+  unpadded?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [name, setName] = useState("Learner");
@@ -50,8 +60,12 @@ export function AppShell({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-[430px] bg-[#f7f3ec] pb-[78px] text-[#253635] md:my-6 md:min-h-[calc(100vh-48px)] md:max-w-[1180px] md:overflow-hidden md:rounded-[22px] md:border md:border-[#e6ded2] md:pb-0 md:shadow-[0_18px_48px_#8f786018]">
-      <header className="flex h-[70px] items-center gap-2 border-b border-[#edf1ee] bg-white px-5 md:h-[76px] md:px-8">
+    <div
+      className={`mx-auto min-h-screen w-full max-w-[430px] bg-[#f7f3ec] ${showBottomNav ? "pb-[78px]" : "pb-0"} text-[#253635] md:my-6 md:min-h-[calc(100vh-48px)] md:max-w-[1180px] md:overflow-hidden md:rounded-[22px] md:border md:border-[#e6ded2] md:pb-0 md:shadow-[0_18px_48px_#8f786018]`}
+    >
+      <header
+        className={`${desktopNavOnly ? "hidden md:flex" : "flex"} h-[70px] items-center gap-2 border-b border-[#edf1ee] bg-white px-5 md:h-[76px] md:px-8`}
+      >
         <button
           onClick={() => router.push("/")}
           className="hidden items-center gap-2 text-sm font-bold text-[#315e57] md:flex"
@@ -108,21 +122,29 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[760px] px-5 py-6 md:px-7 md:py-8">
+      <main
+        className={
+          unpadded
+            ? ""
+            : "mx-auto w-full max-w-[760px] px-5 py-6 md:px-7 md:py-8"
+        }
+      >
         {children}
       </main>
-      <nav className="fixed bottom-0 z-10 flex h-[72px] w-full max-w-[430px] justify-around border-t border-[#e5eeea] bg-white pt-2.5 md:hidden">
-        {navigation.map(({ href, label, icon: Icon }) => (
-          <button
-            key={href}
-            onClick={() => router.push(href)}
-            className={`flex flex-col items-center gap-1 rounded-lg px-2 py-1 text-[9px] ${(href === "/" ? pathname === href : pathname.startsWith(href)) ? "font-bold !text-[#2f7168]" : "text-[#9aaba6]"}`}
-          >
-            <Icon size={21} />
-            <span>{label}</span>
-          </button>
-        ))}
-      </nav>
+      {showBottomNav && (
+        <nav className="fixed bottom-0 z-10 flex h-[72px] w-full max-w-[430px] justify-around border-t border-[#e5eeea] bg-white pt-2.5 md:hidden">
+          {navigation.map(({ href, label, icon: Icon }) => (
+            <button
+              key={href}
+              onClick={() => router.push(href)}
+              className={`flex flex-col items-center gap-1 rounded-lg px-2 py-1 text-[9px] ${(href === "/" ? pathname === href : pathname.startsWith(href)) ? "font-bold !text-[#2f7168]" : "text-[#9aaba6]"}`}
+            >
+              <Icon size={21} />
+              <span>{label}</span>
+            </button>
+          ))}
+        </nav>
+      )}
     </div>
   );
 }
