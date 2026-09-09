@@ -1,8 +1,17 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { Bell, BookOpen, ChevronDown, Clock3, Home, Star } from "lucide-react";
+import {
+  Bell,
+  BookOpen,
+  ChevronDown,
+  Clock3,
+  Home,
+  LogOut,
+  Star,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { getSupabaseClient } from "@/lib/supabase";
 
 const navigation = [
   { href: "/", label: "Dashboard", icon: Home },
@@ -14,6 +23,13 @@ const navigation = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  async function logout() {
+    try {
+      await getSupabaseClient().auth.signOut();
+    } finally {
+      router.push("/login");
+    }
+  }
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-[430px] bg-[#f7f3ec] pb-[78px] text-[#253635] md:my-6 md:min-h-[calc(100vh-48px)] md:max-w-[1180px] md:overflow-hidden md:rounded-[22px] md:border md:border-[#e6ded2] md:pb-0 md:shadow-[0_18px_48px_#8f786018]">
@@ -64,6 +80,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             className="p-1 text-[#71847e]"
           >
             <Bell size={20} />
+          </button>
+          <button
+            onClick={logout}
+            aria-label="Log out"
+            className="hidden p-1 text-[#71847e] md:block"
+          >
+            <LogOut size={18} />
           </button>
         </div>
       </header>
