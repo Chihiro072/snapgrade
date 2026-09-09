@@ -10,6 +10,7 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
+  CircleCheckBig,
   CircleHelp,
   Clock3,
   FileText,
@@ -170,14 +171,14 @@ function Dashboard() {
       <div className="stats-row">
         <div className="stat-card">
           <span>
-            MASTERY RATE <TrendingUp size={14} />
+            MASTERY RATE <CircleCheckBig size={22} strokeWidth={2.4} className="!text-[#648c82]" />
           </span>
           <strong>82.4%</strong>
           <small>+3.1% this month</small>
         </div>
         <div className="stat-card">
           <span>
-            PRACTICED <BookOpen size={14} />
+            PRACTICED <BookOpen size={18} className="!text-[#bfa061]" />
           </span>
           <strong>48 Characters</strong>
           <small>8 lists covered</small>
