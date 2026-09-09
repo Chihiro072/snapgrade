@@ -166,15 +166,6 @@ function Dashboard() {
   const router = useRouter();
   return (
     <>
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">TUESDAY, 14 OCTOBER 2026</p>
-          <h1>Good afternoon, Sarah</h1>
-        </div>
-        <button className="help">
-          <CircleHelp size={18} />
-        </button>
-      </div>
       <ProgressCard />
       <div className="stats-row">
         <div className="stat-card">
