@@ -24,7 +24,10 @@ export default function RegisterPage() {
       const { error } = await getSupabaseClient().auth.signUp({
         email: String(data.get("email")),
         password: String(data.get("password")),
-        options: { emailRedirectTo: `${window.location.origin}/` },
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: { full_name: String(data.get("fullName")) },
+        },
       });
       if (error) throw error;
       setMessage("Check your email to confirm your account, then sign in.");
@@ -45,6 +48,15 @@ export default function RegisterPage() {
         <p className="text-sm font-bold text-[#2f7168]">TING XIE</p>
         <h1 className="mt-2 text-2xl">Create account</h1>
         <label className="mt-6 block text-sm font-semibold">
+          Your name
+          <input
+            required
+            name="fullName"
+            autoComplete="name"
+            className="mt-2 w-full rounded-lg border p-3"
+          />
+        </label>
+        <label className="mt-4 block text-sm font-semibold">
           Email
           <input
             required

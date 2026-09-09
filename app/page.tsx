@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { AppShell as SharedAppShell } from "@/components/app-shell";
 import {
   Bell,
   BookOpen,
@@ -705,7 +706,7 @@ function App() {
   return path === "/camera" || path === "/results" ? (
     content
   ) : (
-    <AppShell>{content}</AppShell>
+    <SharedAppShell>{content}</SharedAppShell>
   );
 }
 export default App;

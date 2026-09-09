@@ -3,14 +3,36 @@ import { AppShell } from "@/components/app-shell";
 import { getSupabaseClient } from "@/lib/supabase";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
-const fields = [
-  ["Name", "Sarah"],
-  ["Learner", "Lucas"],
-  ["Class", "Primary 2"],
-  ["Notifications", "On"],
-];
+import { useEffect, useState } from "react";
 export default function ProfilePage() {
   const router = useRouter();
+  const [name, setName] = useState("Learner");
+  const [email, setEmail] = useState("Not signed in");
+
+  useEffect(() => {
+    getSupabaseClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const user = data.user;
+        if (!user) return;
+        setName(
+          String(
+            user.user_metadata.full_name ||
+              user.email?.split("@")[0] ||
+              "Learner",
+          ),
+        );
+        setEmail(user.email || "Not available");
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const fields = [
+    ["Name", name],
+    ["Email", email],
+    ["Class", "Primary 2"],
+    ["Notifications", "On"],
+  ];
 
   async function logout() {
     try {

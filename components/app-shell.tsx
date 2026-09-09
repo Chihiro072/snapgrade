@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   Bell,
   BookOpen,
@@ -23,6 +23,24 @@ const navigation = [
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [name, setName] = useState("Learner");
+
+  useEffect(() => {
+    getSupabaseClient()
+      .auth.getUser()
+      .then(({ data }) => {
+        const user = data.user;
+        if (!user) return;
+        setName(
+          String(
+            user.user_metadata.full_name ||
+              user.email?.split("@")[0] ||
+              "Learner",
+          ),
+        );
+      })
+      .catch(() => undefined);
+  }, []);
   async function logout() {
     try {
       await getSupabaseClient().auth.signOut();
@@ -67,7 +85,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Welcome back,
               </small>
               <strong className="block whitespace-nowrap text-xs leading-tight">
-                Sarah
+                {name}
               </strong>
             </span>
           </button>
