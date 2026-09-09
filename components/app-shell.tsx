@@ -66,7 +66,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               key={href}
               onClick={() => router.push(href)}
-              className={`rounded-lg px-3 py-2 text-[11px] ${pathname === href ? "bg-[#e3eee8] font-bold text-[#2f7168]" : "text-[#74837d]"}`}
+              className={`rounded-lg px-3 py-2 text-[11px] transition-colors ${(href === "/" ? pathname === href : pathname.startsWith(href)) ? "!bg-[#e3eee8] font-bold !text-[#2f7168]" : "text-[#74837d]"}`}
             >
               {label}
             </button>
@@ -116,7 +116,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             key={href}
             onClick={() => router.push(href)}
-            className={`flex flex-col items-center gap-1 text-[9px] ${pathname === href ? "font-bold text-[#2f7168]" : "text-[#9aaba6]"}`}
+            className={`flex flex-col items-center gap-1 rounded-lg px-2 py-1 text-[9px] ${(href === "/" ? pathname === href : pathname.startsWith(href)) ? "font-bold !text-[#2f7168]" : "text-[#9aaba6]"}`}
           >
             <Icon size={21} />
             <span>{label}</span>
