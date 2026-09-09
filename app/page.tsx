@@ -190,14 +190,15 @@ function Dashboard() {
             View All <ChevronRight size={15} />
           </button>
         </div>
-        <div className="date-strip">
+        <div className="grid grid-cols-6 gap-1 rounded-[22px] border border-[#e5eeea] !bg-white p-3 shadow-[0_2px_8px_#31584b0d]">
           {["Mon|12", "Tue|13", "Wed|14", "Thu|15", "Fri|16", "Sat|17"].map(
             (d, i) => {
               let [a, b] = d.split("|");
               return (
-                <div className={i === 2 ? "selected" : ""} key={d}>
-                  <small>{a}</small>
-                  <strong>{b}</strong>
+                <div className={`grid h-[78px] grid-rows-[16px_24px_8px] content-center justify-items-center gap-2 rounded-[18px] ${i === 2 ? "border-2 border-[#7da59b] !bg-[#edf5f1] text-[#2f7168]" : "text-[#253635]"}`} key={d}>
+                  <small className="text-[11px] text-[#71847e]">{a}</small>
+                  <strong className="text-lg">{b}</strong>
+                  <span className={i === 2 ? "size-1 rounded-full !bg-[#2f7168]" : "size-1"} />
                 </div>
               );
             },
