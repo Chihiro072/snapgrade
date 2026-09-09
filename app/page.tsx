@@ -206,7 +206,7 @@ function Dashboard() {
             },
           )}
         </div>
-        <div className="upcoming">
+        <div className="upcoming mt-3">
           <div className="alarm">
             <Bell size={16} />
           </div>
