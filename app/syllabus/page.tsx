@@ -65,44 +65,41 @@ export default function SyllabusPage() {
         ))}
       </div>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-[15px]">P2 MOE Primary 2 Syllabus</h2>
-        <span className="text-[11px] text-[#96a5a1]">24 Lessons Total</span>
+        <h2 className="text-[18px] font-bold">P2 MOE Primary 2 Syllabus</h2>
+        <span className="text-sm text-[#96a5a1]">24 Lessons Total</span>
       </div>
       <div className="space-y-3">
         {lessons.map((lesson) => (
           <article
             key={lesson.week}
-            className="rounded-2xl border border-[#e7efeb] bg-white p-[18px] shadow-[0_5px_18px_#8f786012]"
+            className="rounded-[22px] border border-[#e7efeb] !bg-white p-5 shadow-[0_5px_18px_#8f786012]"
           >
             <div className="flex justify-between gap-2">
               <div>
-                <p className="text-[11px] text-[#90a19c]">{lesson.week}</p>
-                <h3 className="mt-1 text-base">{lesson.title}</h3>
-                <p className="mt-1 text-[11px] text-[#92a29e]">
-                  {lesson.pinyin}
-                </p>
+                <p className="text-sm font-semibold text-[#6b958c]">{lesson.week}</p>
+                <h3 className="mt-1 text-xl font-bold">{lesson.title}</h3>
               </div>
               <span
-                className={`h-fit rounded-md px-2 py-1.5 text-[10px] ${lesson.tone}`}
+                className={`h-fit rounded-lg px-3 py-2 text-xs font-semibold ${lesson.tone}`}
               >
                 {lesson.status}
               </span>
             </div>
-            <div className="my-4 flex gap-2">
+            <div className="my-5 grid grid-cols-3 gap-3">
               {lesson.words.map(([word, pinyin]) => (
                 <div
                   key={word}
-                  className="min-w-16 rounded-lg bg-[#fafcfb] p-2.5"
+                  className="flex min-h-[92px] flex-col items-center justify-center rounded-xl !bg-[#fbf8f3] p-2 text-center"
                 >
-                  <strong className="block text-[17px]">{word}</strong>
-                  <small className="text-[9px] text-[#93a49f]">{pinyin}</small>
+                  <strong className="block text-[28px] font-extrabold">{word}</strong>
+                  <small className="mt-1 text-xs text-[#93a49f]">{pinyin}</small>
                 </div>
               ))}
             </div>
-            <button className="flex w-full items-center gap-1 border-t border-[#edf2ef] pt-3 text-[11px] text-[#607b73]">
-              <Printer size={15} />
+            <button className="flex w-full items-center gap-2 !border-t !border-[#dce8e2] pt-4 text-base font-semibold !text-[#2f7168]">
+              <Printer size={20} />
               Print A4 Worksheet (PDF)
-              <ChevronRight className="ml-auto" size={15} />
+              <ChevronRight className="ml-auto" size={21} />
             </button>
           </article>
         ))}
