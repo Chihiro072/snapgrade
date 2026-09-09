@@ -103,7 +103,7 @@ export function AppShell({
               </strong>
             </span>
           </button>
-          <button className="flex items-center gap-1 whitespace-nowrap rounded-md bg-[#eaf2ee] px-2.5 py-2 text-[10px] font-bold">
+          <button className="flex items-center gap-1 whitespace-nowrap rounded-full !border-[#d7d7d7] !bg-white px-4 py-2 text-sm font-bold !text-[#2f7168] shadow-[0_2px_7px_#31584b14]">
             Lucas – Primary 2 <ChevronDown size={14} />
           </button>
           <button
