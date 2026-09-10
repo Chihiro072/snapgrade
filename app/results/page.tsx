@@ -58,7 +58,7 @@ type Submission = {
   status: "pending" | "graded" | "failed";
   lesson_id: string | null;
   lessons: { title: string } | null;
-  image_url: string;
+  image_path: string;
 };
 
 type CharacterResult = {
@@ -77,6 +77,7 @@ type ResultsData = {
   words: string[];
   statusByKey: Map<string, "correct" | "incorrect">;
   corrections: Array<{ character: string; x: number; y: number }>;
+  imageUrl: string | null;
 };
 
 function formatColumnDate(iso: string) {
@@ -121,7 +122,7 @@ function ResultsContent() {
       }
 
       const submissionSelect =
-        "id, submitted_at, total_score, status, lesson_id, image_url, lessons(title)";
+        "id, submitted_at, total_score, status, lesson_id, image_path, lessons(title)";
       let target: Submission | null = null;
       if (submissionId) {
         const { data: row, error: fetchError } = await supabase
@@ -191,8 +192,18 @@ function ResultsContent() {
         )
         .map((r) => ({ character: r.character_name, x: r.box_x, y: r.box_y }));
 
+      // The bucket is private, so image_path needs a freshly-signed URL to
+      // actually be viewable — one generated at upload time would go stale.
+      let imageUrl: string | null = null;
+      if (target!.image_path) {
+        const { data: signed } = await supabase.storage
+          .from("worksheets")
+          .createSignedUrl(target!.image_path, 60 * 60);
+        imageUrl = signed?.signedUrl ?? null;
+      }
+
       if (live) {
-        setData({ target: target!, columns, words, statusByKey, corrections });
+        setData({ target: target!, columns, words, statusByKey, corrections, imageUrl });
         setLoading(false);
       }
     }
@@ -228,7 +239,7 @@ function ResultsContent() {
     );
   }
 
-  const { target, columns, words, statusByKey, corrections } = data;
+  const { target, columns, words, statusByKey, corrections, imageUrl } = data;
   const correctCount = words.filter(
     (w) => statusByKey.get(`${target.id}:${w}`) === "correct",
   ).length;
@@ -290,12 +301,12 @@ function ResultsContent() {
             )}
           </div>
         </section>
-        {target.image_url && (
+        {imageUrl && (
           <>
             <h2 className="mt-5 text-sm font-bold">Corrected Worksheet</h2>
             <section className="relative mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
               <img
-                src={target.image_url}
+                src={imageUrl}
                 alt="Captured worksheet"
                 className="block w-full"
               />

@@ -49,25 +49,18 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: signedUrlData, error: signedUrlError } = await supabase.storage
-    .from("worksheets")
-    .createSignedUrl(path, 60 * 60 * 24 * 7);
-  if (signedUrlError || !signedUrlData) {
-    return NextResponse.json(
-      { error: `Could not create image URL: ${signedUrlError?.message}` },
-      { status: 500 },
-    );
-  }
-
+  // Store the storage path, not a signed URL — the bucket is private, so
+  // any browser-usable link has to be generated fresh (and expires) rather
+  // than saved permanently. See schema.sql's comment on `image_path`.
   const { data: submission, error: insertError } = await supabase
     .from("submissions")
     .insert({
       student_id: user.id,
       lesson_id: typeof lessonId === "string" && lessonId ? lessonId : null,
-      image_url: signedUrlData.signedUrl,
+      image_path: path,
       status: "pending",
     })
-    .select("id, submitted_at, image_url, status")
+    .select("id, submitted_at, image_path, status")
     .single();
   if (insertError || !submission) {
     return NextResponse.json(

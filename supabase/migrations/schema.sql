@@ -14,7 +14,11 @@ create table if not exists public.submissions (
   student_id uuid not null references auth.users(id) on delete cascade,
   lesson_id uuid references public.lessons(id) on delete set null,
   submitted_at timestamptz not null default now(),
-  image_url text not null,
+  -- Storage object path (e.g. "<user_id>/<uuid>.jpg") in the private
+  -- `worksheets` bucket, NOT a ready-to-use URL. The bucket is private, so
+  -- any browser-usable URL has to be a signed link generated on demand
+  -- (they expire); storing one permanently here would go stale.
+  image_path text not null,
   -- Nullable: a submission starts as "pending" the moment the photo is
   -- uploaded, before grading has produced a score.
   total_score numeric(5,2) check (total_score >= 0 and total_score <= 100),
@@ -24,11 +28,24 @@ create table if not exists public.submissions (
 -- `create table if not exists` above is a no-op once the table already
 -- exists, so these ALTERs are the real (idempotent) source of truth for
 -- anyone re-running this file against a database created before `status`
--- existed. Safe to re-run any number of times.
+-- existed, or before `image_url` was renamed to `image_path`. Safe to
+-- re-run any number of times.
 alter table public.submissions alter column total_score drop not null;
 alter table public.submissions add column if not exists status text not null default 'pending';
 alter table public.submissions drop constraint if exists submissions_status_check;
 alter table public.submissions add constraint submissions_status_check check (status in ('pending', 'graded', 'failed'));
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'submissions' and column_name = 'image_url'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'submissions' and column_name = 'image_path'
+  ) then
+    alter table public.submissions rename column image_url to image_path;
+  end if;
+end $$;
 
 create table if not exists public.character_results (
   id uuid primary key default gen_random_uuid(),

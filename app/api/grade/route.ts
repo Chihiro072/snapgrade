@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
   const { data: submission, error: submissionError } = await supabase
     .from("submissions")
-    .select("id, image_url, lesson_id")
+    .select("id, image_path, lesson_id")
     .eq("id", submissionId)
     .single();
   if (submissionError || !submission) {
@@ -60,11 +60,13 @@ export async function POST(request: Request) {
   }
 
   try {
-    const imageResponse = await fetch(submission.image_url);
-    if (!imageResponse.ok)
-      throw new Error(`Could not fetch worksheet image (${imageResponse.status}).`);
-    const mimeType = imageResponse.headers.get("content-type") || "image/jpeg";
-    const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+    const { data: imageBlob, error: downloadError } = await supabase.storage
+      .from("worksheets")
+      .download(submission.image_path);
+    if (downloadError || !imageBlob)
+      throw new Error(`Could not download worksheet image: ${downloadError?.message}`);
+    const mimeType = imageBlob.type || "image/jpeg";
+    const imageBuffer = Buffer.from(await imageBlob.arrayBuffer());
     const imageBase64 = imageBuffer.toString("base64");
 
     const results = await gradeWorksheet(imageBase64, mimeType, words);
@@ -89,7 +91,7 @@ export async function POST(request: Request) {
       .from("submissions")
       .update({ total_score: totalScore, status: "graded" })
       .eq("id", submission.id)
-      .select("id, submitted_at, image_url, total_score, status")
+      .select("id, submitted_at, image_path, total_score, status")
       .single();
     if (updateError || !updated)
       throw new Error(`Could not update submission: ${updateError?.message}`);
