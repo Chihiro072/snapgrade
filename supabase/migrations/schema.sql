@@ -35,8 +35,22 @@ create table if not exists public.character_results (
   submission_id uuid not null references public.submissions(id) on delete cascade,
   character_name text not null,
   status text not null check (status in ('correct', 'incorrect')),
+  -- Normalized (0-1) position of this character in the worksheet photo, so
+  -- the frontend can draw a red-pen correction mark at that spot. Nullable:
+  -- the grading model doesn't always return a usable position.
+  box_x numeric(4,3) check (box_x >= 0 and box_x <= 1),
+  box_y numeric(4,3) check (box_y >= 0 and box_y <= 1),
   created_at timestamptz not null default now()
 );
+
+-- Same `create table if not exists` caveat as above: these ALTERs are the
+-- real source of truth for a database created before box_x/box_y existed.
+alter table public.character_results add column if not exists box_x numeric(4,3);
+alter table public.character_results add column if not exists box_y numeric(4,3);
+alter table public.character_results drop constraint if exists character_results_box_x_check;
+alter table public.character_results add constraint character_results_box_x_check check (box_x is null or (box_x >= 0 and box_x <= 1));
+alter table public.character_results drop constraint if exists character_results_box_y_check;
+alter table public.character_results add constraint character_results_box_y_check check (box_y is null or (box_y >= 0 and box_y <= 1));
 
 create index if not exists submissions_student_id_submitted_at_idx on public.submissions (student_id, submitted_at desc);
 create index if not exists character_results_submission_id_idx on public.character_results (submission_id);

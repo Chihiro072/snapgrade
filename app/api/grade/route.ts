@@ -78,6 +78,8 @@ export async function POST(request: Request) {
           submission_id: submission.id,
           character_name: r.character,
           status: r.status,
+          box_x: r.x ?? null,
+          box_y: r.y ?? null,
         })),
       );
     if (resultsError)

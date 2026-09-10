@@ -58,12 +58,15 @@ type Submission = {
   status: "pending" | "graded" | "failed";
   lesson_id: string | null;
   lessons: { title: string } | null;
+  image_url: string;
 };
 
 type CharacterResult = {
   submission_id: string;
   character_name: string;
   status: "correct" | "incorrect";
+  box_x: number | null;
+  box_y: number | null;
 };
 
 type Column = { id: string; submitted_at: string } | null;
@@ -73,6 +76,7 @@ type ResultsData = {
   columns: Column[];
   words: string[];
   statusByKey: Map<string, "correct" | "incorrect">;
+  corrections: Array<{ character: string; x: number; y: number }>;
 };
 
 function formatColumnDate(iso: string) {
@@ -116,7 +120,8 @@ function ResultsContent() {
         return;
       }
 
-      const submissionSelect = "id, submitted_at, total_score, status, lesson_id, lessons(title)";
+      const submissionSelect =
+        "id, submitted_at, total_score, status, lesson_id, image_url, lessons(title)";
       let target: Submission | null = null;
       if (submissionId) {
         const { data: row, error: fetchError } = await supabase
@@ -170,19 +175,24 @@ function ResultsContent() {
       const ids = history.map((h) => h.id);
       const { data: resultsRaw } = await supabase
         .from("character_results")
-        .select("submission_id, character_name, status, created_at")
+        .select("submission_id, character_name, status, box_x, box_y, created_at")
         .in("submission_id", ids)
         .order("created_at", { ascending: true });
 
       const results = (resultsRaw ?? []) as CharacterResult[];
-      const words = results
-        .filter((r) => r.submission_id === target!.id)
-        .map((r) => r.character_name);
+      const targetResults = results.filter((r) => r.submission_id === target!.id);
+      const words = targetResults.map((r) => r.character_name);
       const statusByKey = new Map<string, "correct" | "incorrect">();
       for (const r of results) statusByKey.set(`${r.submission_id}:${r.character_name}`, r.status);
+      const corrections = targetResults
+        .filter(
+          (r): r is CharacterResult & { box_x: number; box_y: number } =>
+            r.status === "incorrect" && r.box_x != null && r.box_y != null,
+        )
+        .map((r) => ({ character: r.character_name, x: r.box_x, y: r.box_y }));
 
       if (live) {
-        setData({ target: target!, columns, words, statusByKey });
+        setData({ target: target!, columns, words, statusByKey, corrections });
         setLoading(false);
       }
     }
@@ -218,7 +228,7 @@ function ResultsContent() {
     );
   }
 
-  const { target, columns, words, statusByKey } = data;
+  const { target, columns, words, statusByKey, corrections } = data;
   const correctCount = words.filter(
     (w) => statusByKey.get(`${target.id}:${w}`) === "correct",
   ).length;
@@ -280,6 +290,50 @@ function ResultsContent() {
             )}
           </div>
         </section>
+        {target.image_url && (
+          <>
+            <h2 className="mt-5 text-sm font-bold">Corrected Worksheet</h2>
+            <section className="relative mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
+              <img
+                src={target.image_url}
+                alt="Captured worksheet"
+                className="block w-full"
+              />
+              {target.status === "graded" &&
+                corrections.map((mark, i) => (
+                  <div
+                    key={`${mark.character}-${i}`}
+                    className="pointer-events-none absolute"
+                    style={{
+                      left: `${mark.x * 100}%`,
+                      top: `${mark.y * 100}%`,
+                      transform: "translate(-50%, -50%)",
+                    }}
+                  >
+                    <span
+                      className="absolute left-1/2 top-1/2 block size-16 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[#e0362c]/80"
+                      style={{ transform: "translate(-50%, -50%) rotate(-6deg)" }}
+                    />
+                    <span
+                      className="absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap rounded bg-white/90 px-1 text-base font-bold text-[#e0362c]"
+                      style={{
+                        fontFamily:
+                          '"Segoe Print","Bradley Hand","Comic Sans MS",cursive',
+                        transform: "rotate(-4deg)",
+                      }}
+                    >
+                      {mark.character}
+                    </span>
+                  </div>
+                ))}
+            </section>
+            {target.status === "graded" && corrections.length === 0 && missedCount > 0 && (
+              <p className="mt-1 text-[10px] text-[#90a19c]">
+                Positions for the missed characters weren&apos;t available for this scan.
+              </p>
+            )}
+          </>
+        )}
         <h2 className="mt-5 text-sm font-bold">Results over time</h2>
         <section className="mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
           <div className="grid grid-cols-[1.45fr_repeat(3,1fr)] bg-[#eaf3ef] text-[10px]">
