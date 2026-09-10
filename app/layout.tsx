@@ -23,6 +23,11 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-icon.png",
   },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Ting Xie",
+  },
 };
 
 export const viewport: Viewport = {
@@ -31,6 +36,7 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: light)", color: "white" },
     { media: "(prefers-color-scheme: dark)", color: "black" },
   ],
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
