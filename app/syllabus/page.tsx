@@ -37,7 +37,7 @@ function deriveStatus(latestScore: number | undefined) {
 }
 
 export default function SyllabusPage() {
-  const [level, setLevel] = useState<Level>("P1");
+  const [level, setLevel] = useState<Level>("P2");
   const [lessons, setLessons] = useState<LessonRow[]>([]);
   const [scoresByLesson, setScoresByLesson] = useState<Record<string, number>>({});
   const [totalLessonCount, setTotalLessonCount] = useState<number | null>(null);
