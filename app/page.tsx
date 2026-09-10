@@ -216,7 +216,12 @@ function Dashboard() {
           </div>
         </div>
       </section>
-      <button className="scan-cta" onClick={() => router.push("/camera")}>
+      <button
+        className="scan-cta"
+        onClick={() =>
+          router.push("/camera?lessonId=a0000000-0000-4000-8000-000000000004")
+        }
+      >
         <ScanLine size={18} /> Scan & Grade Worksheet
       </button>
     </>

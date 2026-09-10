@@ -1,8 +1,7 @@
 "use client";
 
-import { Camera, ChevronRight, Menu, Printer } from "lucide-react";
+import { ChevronRight, Menu, Printer } from "lucide-react";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -49,7 +48,6 @@ const lessons = [
 ];
 
 export default function SyllabusPage() {
-  const router = useRouter();
   const [printingId, setPrintingId] = useState<string | null>(null);
   const [printError, setPrintError] = useState<{ lessonId: string; message: string } | null>(
     null,
@@ -153,13 +151,6 @@ export default function SyllabusPage() {
             {printError?.lessonId === lesson.id && (
               <p className="mt-2 text-xs text-[#d36b60]">{printError.message}</p>
             )}
-            <button
-              onClick={() => router.push(`/camera?lessonId=${lesson.id}`)}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full !bg-[#2f7168] py-3 text-sm font-semibold !text-white"
-            >
-              <Camera size={16} />
-              Scan &amp; Grade This Lesson
-            </button>
           </article>
         ))}
       </div>
