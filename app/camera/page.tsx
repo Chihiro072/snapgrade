@@ -1,8 +1,8 @@
 "use client";
 
 import { Flashlight, FlashlightOff, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 
 type Stage = "idle" | "uploading" | "grading";
@@ -13,13 +13,31 @@ const STAGE_LABEL: Record<Stage, string> = {
   grading: "Grading handwriting…",
 };
 
-export default function CameraPage() {
+function CameraContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const lessonId = searchParams.get("lessonId");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState("");
   const [flash, setFlash] = useState(false);
   const [stage, setStage] = useState<Stage>("idle");
+  const [lessonTitle, setLessonTitle] = useState("");
+  useEffect(() => {
+    if (!lessonId) return setLessonTitle("");
+    let live = true;
+    getSupabaseClient()
+      .from("lessons")
+      .select("title")
+      .eq("id", lessonId)
+      .single()
+      .then(({ data }) => {
+        if (live) setLessonTitle(data?.title ?? "");
+      });
+    return () => {
+      live = false;
+    };
+  }, [lessonId]);
   useEffect(() => {
     let live = true;
     navigator.mediaDevices
@@ -88,6 +106,7 @@ export default function CameraPage() {
       });
       const formData = new FormData();
       formData.append("file", file);
+      if (lessonId) formData.append("lessonId", lessonId);
 
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
@@ -133,7 +152,9 @@ export default function CameraPage() {
         >
           <X />
         </button>
-        <strong className="text-sm">Align Worksheet</strong>
+        <strong className="max-w-[55%] truncate text-sm">
+          {lessonTitle || "Align Worksheet"}
+        </strong>
         <button
           onClick={toggleFlash}
           aria-label="Toggle flash"
@@ -170,5 +191,13 @@ export default function CameraPage() {
         <span className="mt-3 text-xs font-semibold">{STAGE_LABEL[stage]}</span>
       </div>
     </main>
+  );
+}
+
+export default function CameraPage() {
+  return (
+    <Suspense fallback={null}>
+      <CameraContent />
+    </Suspense>
   );
 }

@@ -1,10 +1,12 @@
 "use client";
 
-import { ChevronRight, Menu, Printer } from "lucide-react";
+import { Camera, ChevronRight, Menu, Printer } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
 
 const lessons = [
   {
+    id: "a0000000-0000-4000-8000-000000000004",
     week: "Week 4",
     title: "第十课 - 我们的校园",
     pinyin: "wǒ men de xiào yuán",
@@ -18,6 +20,7 @@ const lessons = [
     ],
   },
   {
+    id: "a0000000-0000-4000-8000-000000000003",
     week: "Week 3",
     title: "第九课 - 我爱我的家",
     pinyin: "wǒ ài wǒ de jiā",
@@ -30,6 +33,7 @@ const lessons = [
     ],
   },
   {
+    id: "a0000000-0000-4000-8000-000000000002",
     week: "Week 2",
     title: "第八课 - 快乐的周末",
     pinyin: "kuài lè de zhōu mò",
@@ -43,6 +47,7 @@ const lessons = [
 ];
 
 export default function SyllabusPage() {
+  const router = useRouter();
   return (
     <AppShell>
       <header className="mb-5 flex justify-between">
@@ -96,10 +101,19 @@ export default function SyllabusPage() {
                 </div>
               ))}
             </div>
-            <button className="flex w-full items-center gap-2 !border-t !border-[#dce8e2] pt-4 text-base font-semibold !text-[#2f7168]">
-              <Printer size={20} />
-              Print A4 Worksheet (PDF)
-              <ChevronRight className="ml-auto" size={21} />
+            <div className="flex items-center gap-2 !border-t !border-[#dce8e2] pt-4">
+              <button className="flex flex-1 items-center gap-2 text-base font-semibold !text-[#2f7168]">
+                <Printer size={20} />
+                Print A4 Worksheet (PDF)
+                <ChevronRight className="ml-auto" size={21} />
+              </button>
+            </div>
+            <button
+              onClick={() => router.push(`/camera?lessonId=${lesson.id}`)}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full !bg-[#2f7168] py-3 text-sm font-semibold !text-white"
+            >
+              <Camera size={16} />
+              Scan &amp; Grade This Lesson
             </button>
           </article>
         ))}

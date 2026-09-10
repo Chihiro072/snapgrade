@@ -9,6 +9,21 @@ create table if not exists public.lessons (
   created_at timestamptz not null default now()
 );
 
+-- Seed data matching the hardcoded lesson cards on the Syllabus screen
+-- (app/syllabus/page.tsx), using fixed ids so that screen can link straight
+-- to "/camera?lessonId=<id>" and grading has a real word_list to compare
+-- against. Upsert so re-running this file keeps them in sync with the UI.
+insert into public.lessons (id, title, moe_level, week_number, word_list)
+values
+  ('a0000000-0000-4000-8000-000000000004', '第十课 - 我们的校园', 'P2', 4, '["校园", "操场", "老师", "礼堂"]'::jsonb),
+  ('a0000000-0000-4000-8000-000000000003', '第九课 - 我爱我的家', 'P2', 3, '["爸爸", "妈妈", "温暖"]'::jsonb),
+  ('a0000000-0000-4000-8000-000000000002', '第八课 - 快乐的周末', 'P2', 2, '["玩耍", "公园"]'::jsonb)
+on conflict (id) do update set
+  title = excluded.title,
+  moe_level = excluded.moe_level,
+  week_number = excluded.week_number,
+  word_list = excluded.word_list;
+
 create table if not exists public.submissions (
   id uuid primary key default gen_random_uuid(),
   student_id uuid not null references auth.users(id) on delete cascade,
