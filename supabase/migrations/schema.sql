@@ -45,8 +45,16 @@ create policy "Students can read own submissions" on public.submissions for sele
 drop policy if exists "Students can create own submissions" on public.submissions;
 create policy "Students can create own submissions" on public.submissions for insert to authenticated with check (student_id = auth.uid());
 
+-- Lets the grading step write the score/status back onto a submission it owns.
+drop policy if exists "Students can update own submissions" on public.submissions;
+create policy "Students can update own submissions" on public.submissions for update to authenticated using (student_id = auth.uid()) with check (student_id = auth.uid());
+
 drop policy if exists "Students can read own character results" on public.character_results;
 create policy "Students can read own character results" on public.character_results for select to authenticated using (exists (select 1 from public.submissions s where s.id = submission_id and s.student_id = auth.uid()));
+
+-- Lets the grading step write per-character results for a submission it owns.
+drop policy if exists "Students can create own character results" on public.character_results;
+create policy "Students can create own character results" on public.character_results for insert to authenticated with check (exists (select 1 from public.submissions s where s.id = submission_id and s.student_id = auth.uid()));
 
 -- Storage bucket for captured worksheet photos, keyed by uploader's user id folder.
 insert into storage.buckets (id, name, public)

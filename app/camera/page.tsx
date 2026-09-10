@@ -3,6 +3,15 @@
 import { Flashlight, FlashlightOff, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getSupabaseClient } from "@/lib/supabase";
+
+type Stage = "idle" | "uploading" | "grading";
+
+const STAGE_LABEL: Record<Stage, string> = {
+  idle: "Capture & Grade",
+  uploading: "Uploading worksheet…",
+  grading: "Grading handwriting…",
+};
 
 export default function CameraPage() {
   const router = useRouter();
@@ -10,7 +19,7 @@ export default function CameraPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const [error, setError] = useState("");
   const [flash, setFlash] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const [stage, setStage] = useState<Stage>("idle");
   useEffect(() => {
     let live = true;
     navigator.mediaDevices
@@ -53,26 +62,59 @@ export default function CameraPage() {
   async function capture() {
     const video = videoRef.current;
     if (!video || !video.videoWidth) return;
-    setUploading(true);
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
-    canvas.toBlob(
-      (blob) => {
-        if (!blob) {
-          setUploading(false);
-          return;
-        }
-        const file = new File([blob], `worksheet-${Date.now()}.jpg`, {
-          type: "image/jpeg",
-        });
-        sessionStorage.setItem("snapgrade-capture", URL.createObjectURL(file));
-        setTimeout(() => setUploading(false), 900);
-      },
-      "image/jpeg",
-      0.94,
-    );
+
+    const {
+      data: { session },
+    } = await getSupabaseClient().auth.getSession();
+    if (!session) {
+      setError("Please log in to grade a worksheet.");
+      return;
+    }
+
+    setError("");
+    setStage("uploading");
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d")?.drawImage(video, 0, 0);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.94),
+      );
+      if (!blob) throw new Error("Could not capture a frame from the camera.");
+
+      const file = new File([blob], `worksheet-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: formData,
+      });
+      const uploadBody = await uploadRes.json();
+      if (!uploadRes.ok)
+        throw new Error(uploadBody.error ?? "Upload failed.");
+
+      setStage("grading");
+      const gradeRes = await fetch("/api/grade", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ submissionId: uploadBody.submission.id }),
+      });
+      const gradeBody = await gradeRes.json();
+      if (!gradeRes.ok) throw new Error(gradeBody.error ?? "Grading failed.");
+
+      router.push(`/results?submissionId=${uploadBody.submission.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+      setStage("idle");
+    }
   }
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#18201f] text-white">
@@ -119,15 +161,13 @@ export default function CameraPage() {
       </p>
       <div className="absolute inset-x-0 bottom-10 z-10 flex flex-col items-center">
         <button
-          disabled={uploading || !!error}
+          disabled={stage !== "idle"}
           onClick={capture}
           className="grid size-20 place-items-center rounded-full border-4 border-white/60 bg-white p-1 disabled:opacity-60"
         >
           <span className="size-full rounded-full border-2 border-[#d7d7d7] bg-white" />
         </button>
-        <span className="mt-3 text-xs font-semibold">
-          {uploading ? "Uploading worksheet…" : "Capture & Grade"}
-        </span>
+        <span className="mt-3 text-xs font-semibold">{STAGE_LABEL[stage]}</span>
       </div>
     </main>
   );
