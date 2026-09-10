@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase";
 import { renderWorksheetPdf } from "@/lib/worksheet";
+import { extractWords } from "@/lib/words";
 
 export const runtime = "nodejs";
 
@@ -41,9 +42,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Lesson not found." }, { status: 404 });
   }
 
-  const wordList = Array.isArray(lesson.word_list)
-    ? lesson.word_list.filter((w): w is string => typeof w === "string")
-    : [];
+  const wordList = extractWords(lesson.word_list);
 
   const pdfBytes = await renderWorksheetPdf({
     title: lesson.title,

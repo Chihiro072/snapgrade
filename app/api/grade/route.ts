@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { gradeWorksheet } from "@/lib/grading";
 import { getSupabaseServerClient } from "@/lib/supabase";
-import { DEFAULT_WORD_LIST } from "@/lib/words";
+import { DEFAULT_WORD_LIST, extractWords } from "@/lib/words";
 
 export const runtime = "nodejs";
 
@@ -47,16 +47,15 @@ export async function POST(request: Request) {
     );
   }
 
-  let words = DEFAULT_WORD_LIST;
+  let words: string[] = DEFAULT_WORD_LIST;
   if (submission.lesson_id) {
     const { data: lesson } = await supabase
       .from("lessons")
       .select("word_list")
       .eq("id", submission.lesson_id)
       .single();
-    if (Array.isArray(lesson?.word_list) && lesson.word_list.length > 0) {
-      words = lesson.word_list;
-    }
+    const extracted = extractWords(lesson?.word_list);
+    if (extracted.length > 0) words = extracted;
   }
 
   try {

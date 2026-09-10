@@ -33,3 +33,20 @@ export const PINYIN_BY_CHARACTER: Record<string, string> = {
   花园: "huā yuán",
   运动场: "yùn dòng chǎng",
 };
+
+/**
+ * A lesson's `word_list` column holds `{word, pinyin}` objects; extracts
+ * just the word text, tolerating plain strings too for defensiveness.
+ */
+export function extractWords(wordList: unknown): string[] {
+  if (!Array.isArray(wordList)) return [];
+  return wordList
+    .map((entry) =>
+      typeof entry === "string"
+        ? entry
+        : typeof entry === "object" && entry && "word" in entry
+          ? String((entry as { word: unknown }).word)
+          : null,
+    )
+    .filter((w): w is string => Boolean(w));
+}
