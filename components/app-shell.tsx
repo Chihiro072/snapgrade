@@ -93,14 +93,14 @@ export function AppShell({
             onClick={() => router.push("/profile")}
             className="order-[-1] mr-auto flex items-center gap-2 text-left md:order-none md:mr-0"
           >
-            <span className="grid size-[34px] shrink-0 place-items-center rounded-full bg-[#eaf3ee] text-[13px] font-bold text-[#2f7168] md:size-7">
+            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#eaf3ee] text-base font-bold text-[#2f7168] md:size-9">
               S
             </span>
             <span>
-              <small className="block whitespace-nowrap text-[9px] leading-none text-[#90a19c]">
+              <small className="block whitespace-nowrap text-[11px] leading-none text-[#90a19c]">
                 Welcome back,
               </small>
-              <strong className="block whitespace-nowrap text-xs leading-tight">
+              <strong className="block whitespace-nowrap text-base leading-tight">
                 {name}
               </strong>
             </span>

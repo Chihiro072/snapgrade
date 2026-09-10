@@ -189,7 +189,7 @@ function Dashboard() {
         <div className="row-heading">
           <h2>Upcoming Ting Xie</h2>
           <button onClick={() => router.push("/upcoming")}>
-            View All <ChevronRight size={15} />
+            View All
           </button>
         </div>
         <div className="grid grid-cols-6 gap-1 rounded-[22px] border border-[#e5eeea] !bg-white p-3 shadow-[0_2px_8px_#31584b0d]">
