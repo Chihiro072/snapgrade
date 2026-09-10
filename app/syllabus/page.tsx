@@ -21,14 +21,25 @@ type LessonRow = {
   title: string;
   pinyin: string;
   week_number: number | null;
-  status_label: string;
-  status_tone: string;
   word_list: unknown;
 };
+
+/** A lesson's status tag is derived from the student's own graded
+ * submissions for it, not a fixed per-lesson label — same threshold the
+ * Results page uses for its "On Track" vs "Needs Revision" badge. */
+const PASS_THRESHOLD = 80;
+
+function deriveStatus(latestScore: number | undefined) {
+  if (latestScore == null) return { label: "Pending Practice", tone: "amber" };
+  if (latestScore >= PASS_THRESHOLD)
+    return { label: `Completed (${Math.round(latestScore)}%)`, tone: "green" };
+  return { label: `Needs Revision (${Math.round(latestScore)}%)`, tone: "red" };
+}
 
 export default function SyllabusPage() {
   const [level, setLevel] = useState<Level>("P2");
   const [lessons, setLessons] = useState<LessonRow[]>([]);
+  const [scoresByLesson, setScoresByLesson] = useState<Record<string, number>>({});
   const [totalLessonCount, setTotalLessonCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -41,20 +52,47 @@ export default function SyllabusPage() {
     let live = true;
     setLoading(true);
     setLoadError("");
-    getSupabaseClient()
-      .from("lessons")
-      .select("id, title, pinyin, week_number, status_label, status_tone, word_list")
-      .eq("moe_level", level)
-      .order("week_number", { ascending: true })
-      .then(({ data, error }) => {
-        if (!live) return;
-        if (error) {
-          setLoadError(error.message);
-        } else {
-          setLessons((data ?? []) as LessonRow[]);
-        }
+    async function load() {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("lessons")
+        .select("id, title, pinyin, week_number, word_list")
+        .eq("moe_level", level)
+        .order("week_number", { ascending: true });
+      if (!live) return;
+      if (error) {
+        setLoadError(error.message);
         setLoading(false);
-      });
+        return;
+      }
+      const lessonRows = (data ?? []) as LessonRow[];
+      setLessons(lessonRows);
+      setLoading(false);
+
+      // Correlate each lesson with the student's own history: only a real
+      // graded submission counts, so an untouched or still-grading lesson
+      // stays "Pending Practice" instead of a fixed made-up label.
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!live || !session || lessonRows.length === 0) return;
+      const { data: submissions } = await supabase
+        .from("submissions")
+        .select("lesson_id, total_score, submitted_at")
+        .eq("status", "graded")
+        .in(
+          "lesson_id",
+          lessonRows.map((l) => l.id),
+        )
+        .order("submitted_at", { ascending: true });
+      if (!live) return;
+      const latest: Record<string, number> = {};
+      for (const row of submissions ?? []) {
+        if (row.lesson_id && row.total_score != null) latest[row.lesson_id] = row.total_score;
+      }
+      setScoresByLesson(latest);
+    }
+    load();
     return () => {
       live = false;
     };
@@ -150,6 +188,7 @@ export default function SyllabusPage() {
             const wordPairs: [string, string][] = (
               lesson.word_list as { word: string; pinyin: string }[]
             ).map((w) => [w.word, w.pinyin]);
+            const status = deriveStatus(scoresByLesson[lesson.id]);
             return (
               <article
                 key={lesson.id}
@@ -163,9 +202,9 @@ export default function SyllabusPage() {
                     <h3 className="mt-1 text-xl font-bold">{lesson.title}</h3>
                   </div>
                   <span
-                    className={`h-fit rounded-lg px-3 py-2 text-xs font-semibold ${TONE_CLASS[lesson.status_tone] ?? TONE_CLASS.amber}`}
+                    className={`h-fit rounded-lg px-3 py-2 text-xs font-semibold ${TONE_CLASS[status.tone]}`}
                   >
-                    {lesson.status_label}
+                    {status.label}
                   </span>
                 </div>
                 <div className="my-5 grid grid-cols-3 gap-3">
