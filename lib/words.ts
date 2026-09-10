@@ -15,3 +15,21 @@ export const DEFAULT_WORD_LIST = [
   "花园",
   "运动场",
 ];
+
+/**
+ * Display-only pinyin for the default word list, since neither `lessons`
+ * nor `character_results` store pronunciation. A lesson-specific word list
+ * simply won't show pinyin under its characters.
+ */
+export const PINYIN_BY_CHARACTER: Record<string, string> = {
+  操场: "cāo chǎng",
+  礼堂: "lǐ táng",
+  老师: "lǎo shī",
+  校园: "xiào yuán",
+  同学: "tóng xué",
+  教室: "jiào shì",
+  图书馆: "tú shū guǎn",
+  食堂: "shí táng",
+  花园: "huā yuán",
+  运动场: "yùn dòng chǎng",
+};

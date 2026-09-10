@@ -21,6 +21,15 @@ create table if not exists public.submissions (
   status text not null default 'pending' check (status in ('pending', 'graded', 'failed'))
 );
 
+-- `create table if not exists` above is a no-op once the table already
+-- exists, so these ALTERs are the real (idempotent) source of truth for
+-- anyone re-running this file against a database created before `status`
+-- existed. Safe to re-run any number of times.
+alter table public.submissions alter column total_score drop not null;
+alter table public.submissions add column if not exists status text not null default 'pending';
+alter table public.submissions drop constraint if exists submissions_status_check;
+alter table public.submissions add constraint submissions_status_check check (status in ('pending', 'graded', 'failed'));
+
 create table if not exists public.character_results (
   id uuid primary key default gen_random_uuid(),
   submission_id uuid not null references public.submissions(id) on delete cascade,

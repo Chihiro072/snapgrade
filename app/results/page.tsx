@@ -1,7 +1,10 @@
 "use client";
 import { RotateCcw, Share2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { getSupabaseClient } from "@/lib/supabase";
+import { PINYIN_BY_CHARACTER } from "@/lib/words";
 
 function HandDrawnCheck({ size = 21, rotate = 0 }: { size?: number; rotate?: number }) {
   return (
@@ -48,81 +51,283 @@ function HandDrawnX({ size = 20, rotate = 0 }: { size?: number; rotate?: number 
   );
 }
 
-const rows = [
-  ["操场", "cāo chǎng", "x", "x", "ok"],
-  ["礼堂", "lǐ táng", "x", "x", "x"],
-  ["校园", "xiào yuán", "x", "ok", "ok"],
-  ["老师", "lǎo shī", "ok", "ok", "ok"],
-  ["同学", "tóng xué", "x", "ok", "ok"],
-  ["教室", "jiào shì", "ok", "ok", "ok"],
-  ["图书馆", "tú shū guǎn", "x", "x", "ok"],
-  ["食堂", "shí táng", "ok", "ok", "ok"],
-  ["花园", "huā yuán", "x", "ok", "ok"],
-  ["运动场", "yùn dòng chǎng", "x", "x", "ok"],
-];
-export default function ResultsPage() {
+type Submission = {
+  id: string;
+  submitted_at: string;
+  total_score: number | null;
+  status: "pending" | "graded" | "failed";
+  lesson_id: string | null;
+  lessons: { title: string } | null;
+};
+
+type CharacterResult = {
+  submission_id: string;
+  character_name: string;
+  status: "correct" | "incorrect";
+};
+
+type Column = { id: string; submitted_at: string } | null;
+
+type ResultsData = {
+  target: Submission;
+  columns: Column[];
+  words: string[];
+  statusByKey: Map<string, "correct" | "incorrect">;
+};
+
+function formatColumnDate(iso: string) {
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
+function formatGradedDate(iso: string) {
+  return new Date(iso).toLocaleString("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function ResultsContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const submissionId = searchParams.get("submissionId");
+  const [data, setData] = useState<ResultsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let live = true;
+    async function load() {
+      setLoading(true);
+      setError("");
+      const supabase = getSupabaseClient();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        if (live) {
+          setError("Please log in to view results.");
+          setLoading(false);
+        }
+        return;
+      }
+
+      const submissionSelect = "id, submitted_at, total_score, status, lesson_id, lessons(title)";
+      let target: Submission | null = null;
+      if (submissionId) {
+        const { data: row, error: fetchError } = await supabase
+          .from("submissions")
+          .select(submissionSelect)
+          .eq("id", submissionId)
+          .single();
+        if (fetchError || !row) {
+          if (live) {
+            setError("That submission could not be found.");
+            setLoading(false);
+          }
+          return;
+        }
+        target = row as unknown as Submission;
+      } else {
+        const { data: row } = await supabase
+          .from("submissions")
+          .select(submissionSelect)
+          .order("submitted_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (!row) {
+          if (live) {
+            setError("No worksheets scanned yet — capture one to see results here.");
+            setLoading(false);
+          }
+          return;
+        }
+        target = row as unknown as Submission;
+      }
+
+      let historyQuery = supabase
+        .from("submissions")
+        .select("id, submitted_at")
+        .order("submitted_at", { ascending: false })
+        .limit(3);
+      if (target.lesson_id) historyQuery = historyQuery.eq("lesson_id", target.lesson_id);
+      const { data: historyRaw } = await historyQuery;
+      let history = (historyRaw ?? []).slice().reverse();
+      if (!history.some((h) => h.id === target!.id)) {
+        history = [...history, { id: target.id, submitted_at: target.submitted_at }]
+          .sort((a, b) => a.submitted_at.localeCompare(b.submitted_at))
+          .slice(-3);
+      }
+      const columns: Column[] = Array.from(
+        { length: 3 },
+        (_, i) => history[history.length - 3 + i] ?? null,
+      );
+
+      const ids = history.map((h) => h.id);
+      const { data: resultsRaw } = await supabase
+        .from("character_results")
+        .select("submission_id, character_name, status, created_at")
+        .in("submission_id", ids)
+        .order("created_at", { ascending: true });
+
+      const results = (resultsRaw ?? []) as CharacterResult[];
+      const words = results
+        .filter((r) => r.submission_id === target!.id)
+        .map((r) => r.character_name);
+      const statusByKey = new Map<string, "correct" | "incorrect">();
+      for (const r of results) statusByKey.set(`${r.submission_id}:${r.character_name}`, r.status);
+
+      if (live) {
+        setData({ target: target!, columns, words, statusByKey });
+        setLoading(false);
+      }
+    }
+    load();
+    return () => {
+      live = false;
+    };
+  }, [submissionId]);
+
+  if (loading) {
+    return (
+      <AppShell showBottomNav={false} desktopNavOnly unpadded>
+        <main className="mx-auto grid min-h-screen max-w-[430px] place-items-center bg-[#f7f3ec] px-4 text-[#273b38] md:max-w-2xl">
+          <p className="text-sm text-[#71847e]">Loading results…</p>
+        </main>
+      </AppShell>
+    );
+  }
+
+  if (error || !data) {
+    return (
+      <AppShell showBottomNav={false} desktopNavOnly unpadded>
+        <main className="mx-auto grid min-h-screen max-w-[430px] place-items-center gap-4 bg-[#f7f3ec] px-4 text-center text-[#273b38] md:max-w-2xl">
+          <p className="text-sm text-[#71847e]">{error}</p>
+          <button
+            onClick={() => router.push("/camera")}
+            className="rounded-full !bg-[#2f7168] px-5 py-3 text-sm !text-white"
+          >
+            Scan a worksheet
+          </button>
+        </main>
+      </AppShell>
+    );
+  }
+
+  const { target, columns, words, statusByKey } = data;
+  const correctCount = words.filter(
+    (w) => statusByKey.get(`${target.id}:${w}`) === "correct",
+  ).length;
+  const missedCount = words.length - correctCount;
+  const percent = target.total_score ?? 0;
+  const isGood = target.status === "graded" && percent >= 80;
+
+  const badgeText =
+    target.status === "pending"
+      ? "Grading…"
+      : target.status === "failed"
+        ? "Grading Failed"
+        : isGood
+          ? "On Track"
+          : "Needs Revision";
+  const badgeClass =
+    target.status === "pending"
+      ? "bg-[#eef1ef] text-[#71847e]"
+      : target.status === "failed" || !isGood
+        ? "bg-[#fff0ed] text-[#d36b60]"
+        : "bg-[#e7f1ed] text-[#2f7168]";
+  const circleColor = target.status === "failed" || !isGood ? "#d86962" : "#2f7168";
+  const circleBg = target.status === "failed" || !isGood ? "#fff4f2" : "#eaf5f1";
+
   return (
     <AppShell showBottomNav={false} desktopNavOnly unpadded>
       <main className="mx-auto min-h-screen max-w-[430px] bg-[#f7f3ec] px-4 pb-28 pt-6 text-[#273b38] md:max-w-2xl md:px-10 md:pb-10 md:pt-12">
         <header className="flex justify-between">
           <div>
             <p className="text-[10px] text-[#90a19c]">TEST FEEDBACK</p>
-            <h1 className="text-xl font-bold">Week 4 Syllabus Test</h1>
+            <h1 className="text-xl font-bold">
+              {target.lessons?.title ?? "Practice Test"}
+            </h1>
           </div>
-          <span className="h-fit rounded bg-[#fff0ed] px-2 py-1 text-[9px] text-[#d36b60]">
-            Needs Revision
+          <span className={`h-fit rounded px-2 py-1 text-[9px] ${badgeClass}`}>
+            {badgeText}
           </span>
         </header>
         <section className="mt-5 flex gap-4 rounded-2xl bg-white p-4">
-          <div className="grid size-14 place-items-center rounded-full border-[3px] !border-[#d86962] !bg-[#fff4f2] font-bold !text-[#d86962]">
-            80%
+          <div
+            className="grid size-14 place-items-center rounded-full border-[3px] font-bold"
+            style={{ borderColor: circleColor, background: circleBg, color: circleColor }}
+          >
+            {target.status === "graded" ? `${Math.round(percent)}%` : "…"}
           </div>
           <div>
-            <strong className="block text-lg">Score: 8/10</strong>
-            <small>Graded on 14 Oct, 3:12 PM</small>
-            <b className="block text-[10px] text-[#d86962]">
-              2 characters missed
-            </b>
+            <strong className="block text-lg">
+              {target.status === "graded"
+                ? `Score: ${correctCount}/${words.length}`
+                : target.status === "pending"
+                  ? "Grading in progress…"
+                  : "Grading failed"}
+            </strong>
+            <small>Graded on {formatGradedDate(target.submitted_at)}</small>
+            {target.status === "graded" && (
+              <b className="block text-[10px] text-[#d86962]">
+                {missedCount} character{missedCount === 1 ? "" : "s"} missed
+              </b>
+            )}
           </div>
         </section>
         <h2 className="mt-5 text-sm font-bold">Results over time</h2>
         <section className="mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
           <div className="grid grid-cols-[1.45fr_repeat(3,1fr)] bg-[#eaf3ef] text-[10px]">
             <span className="p-3">Character</span>
-            <span className="border-l border-[#d6e4de] p-3 text-center">
-              8 Oct
-            </span>
-            <span className="border-l border-[#d6e4de] p-3 text-center">
-              10 Oct
-            </span>
-            <span className="border-l border-[#d6e4de] p-3 text-center">
-              12 Oct
-            </span>
-          </div>
-          {rows.map(([word, pinyin, ...marks], index) => (
-            <div
-              key={word}
-              className={`grid min-h-12 grid-cols-[1.45fr_repeat(3,1fr)] border-t ${index % 2 ? "bg-[#fbf7f0]" : "bg-white"}`}
-            >
-              <span className="flex flex-col justify-center px-5 py-2">
-                <strong className="block text-lg font-extrabold">{word}</strong>
-                <small className="mt-1 text-xs text-[#71847e]">{pinyin}</small>
+            {columns.map((col, i) => (
+              <span key={i} className="border-l border-[#d6e4de] p-3 text-center">
+                {col ? formatColumnDate(col.submitted_at) : "–"}
               </span>
-              {marks.map((mark, i) => (
-                <span
-                  key={i}
-                  className={`grid place-items-center border-l border-[#e6ece8] ${mark === "ok" ? "text-[#438c76]" : "text-[#d56d67]"}`}
-                >
-                  {mark === "ok" ? (
-                    <HandDrawnCheck size={21} rotate={((index + i) % 3) - 1} />
-                  ) : (
-                    <HandDrawnX size={20} rotate={((index + i) % 3) - 1} />
+            ))}
+          </div>
+          {words.length === 0 ? (
+            <p className="p-5 text-center text-xs text-[#71847e]">
+              No characters graded yet.
+            </p>
+          ) : (
+            words.map((word, index) => (
+              <div
+                key={word}
+                className={`grid min-h-12 grid-cols-[1.45fr_repeat(3,1fr)] border-t ${index % 2 ? "bg-[#fbf7f0]" : "bg-white"}`}
+              >
+                <span className="flex flex-col justify-center px-5 py-2">
+                  <strong className="block text-lg font-extrabold">{word}</strong>
+                  {PINYIN_BY_CHARACTER[word] && (
+                    <small className="mt-1 text-xs text-[#71847e]">
+                      {PINYIN_BY_CHARACTER[word]}
+                    </small>
                   )}
                 </span>
-              ))}
-            </div>
-          ))}
+                {columns.map((col, i) => {
+                  const mark = col ? statusByKey.get(`${col.id}:${word}`) : undefined;
+                  return (
+                    <span
+                      key={i}
+                      className={`grid place-items-center border-l border-[#e6ece8] ${mark === "correct" ? "text-[#438c76]" : mark === "incorrect" ? "text-[#d56d67]" : "text-[#c7d0cc]"}`}
+                    >
+                      {mark === "correct" ? (
+                        <HandDrawnCheck size={21} rotate={((index + i) % 3) - 1} />
+                      ) : mark === "incorrect" ? (
+                        <HandDrawnX size={20} rotate={((index + i) % 3) - 1} />
+                      ) : (
+                        "–"
+                      )}
+                    </span>
+                  );
+                })}
+              </div>
+            ))
+          )}
         </section>
         <div className="fixed bottom-0 left-1/2 flex w-full max-w-[430px] -translate-x-1/2 gap-2 border-t border-[#e5eeea] bg-white p-4 md:static md:mt-4 md:max-w-none md:translate-x-0 md:justify-end md:border-0 md:bg-transparent md:p-0">
           <button className="flex-1 rounded-full !bg-[#e7f1ed] py-3 !text-[#2f7168] md:max-w-40">
@@ -137,5 +342,13 @@ export default function ResultsPage() {
         </div>
       </main>
     </AppShell>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResultsContent />
+    </Suspense>
   );
 }
