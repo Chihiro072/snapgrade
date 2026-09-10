@@ -1,6 +1,13 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+
+// A fresh createClient() per call spins up its own GoTrueClient, all
+// sharing the same localStorage auth-token key — Supabase's own client
+// warns this causes undefined behavior. Memoize a single browser instance.
+let browserClient: SupabaseClient | null = null;
 
 export function getSupabaseClient() {
+  if (browserClient) return browserClient;
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -8,7 +15,8 @@ export function getSupabaseClient() {
     throw new Error(
       "Add Supabase credentials to .env before using authentication.",
     );
-  return createClient(url, key);
+  browserClient = createClient(url, key);
+  return browserClient;
 }
 
 /**

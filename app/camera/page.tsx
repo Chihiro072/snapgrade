@@ -4,6 +4,7 @@ import { Flashlight, FlashlightOff, X } from "lucide-react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
+import { useGrade } from "@/lib/grade-context";
 
 type Stage = "idle" | "uploading" | "grading";
 
@@ -16,6 +17,7 @@ const STAGE_LABEL: Record<Stage, string> = {
 function CameraContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { refreshProgress } = useGrade();
   const lessonId = searchParams.get("lessonId");
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -129,6 +131,7 @@ function CameraContent() {
       const gradeBody = await gradeRes.json();
       if (!gradeRes.ok) throw new Error(gradeBody.error ?? "Grading failed.");
 
+      refreshProgress();
       router.push(`/results?submissionId=${uploadBody.submission.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");

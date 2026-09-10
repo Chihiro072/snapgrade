@@ -1,11 +1,13 @@
 "use client";
 import { AppShell } from "@/components/app-shell";
 import { getSupabaseClient } from "@/lib/supabase";
+import { useGrade } from "@/lib/grade-context";
 import { LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 export default function ProfilePage() {
   const router = useRouter();
+  const { grade } = useGrade();
   const [name, setName] = useState("Learner");
   const [email, setEmail] = useState("Not signed in");
 
@@ -30,7 +32,7 @@ export default function ProfilePage() {
   const fields = [
     ["Name", name],
     ["Email", email],
-    ["Class", "Primary 2"],
+    ["Class", `Primary ${grade.slice(1)}`],
     ["Notifications", "On"],
   ];
 

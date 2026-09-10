@@ -1,12 +1,11 @@
 "use client";
 
-import { ChevronRight, Menu, Printer } from "lucide-react";
+import { ChevronRight, Lock, Menu, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { getSupabaseClient } from "@/lib/supabase";
 import { extractWords } from "@/lib/words";
-
-type Level = "P1" | "P2" | "P3" | "P4" | "P5" | "P6";
+import { PASS_THRESHOLD, useGrade, type Grade as Level } from "@/lib/grade-context";
 
 const LEVELS: Level[] = ["P1", "P2", "P3", "P4", "P5", "P6"];
 
@@ -27,8 +26,6 @@ type LessonRow = {
 /** A lesson's status tag is derived from the student's own graded
  * submissions for it, not a fixed per-lesson label — same threshold the
  * Results page uses for its "On Track" vs "Needs Revision" badge. */
-const PASS_THRESHOLD = 80;
-
 function deriveStatus(latestScore: number | undefined) {
   if (latestScore == null) return { label: "Pending Practice", tone: "amber" };
   if (latestScore >= PASS_THRESHOLD)
@@ -37,7 +34,20 @@ function deriveStatus(latestScore: number | undefined) {
 }
 
 export default function SyllabusPage() {
-  const [level, setLevel] = useState<Level>("P2");
+  const { grade, unlockedLevels, loading: progressLoading } = useGrade();
+  // Which level's lessons are shown — defaults to the student's real
+  // current level once progress finishes loading, but browsing an earlier
+  // *unlocked* level afterward shouldn't get yanked back.
+  const [level, setLevel] = useState<Level>(grade);
+  const [hasSyncedInitialLevel, setHasSyncedInitialLevel] = useState(false);
+  useEffect(() => {
+    if (!progressLoading && !hasSyncedInitialLevel) {
+      setLevel(grade);
+      setHasSyncedInitialLevel(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progressLoading]);
+
   const [lessons, setLessons] = useState<LessonRow[]>([]);
   const [scoresByLesson, setScoresByLesson] = useState<Record<string, number>>({});
   const [totalLessonCount, setTotalLessonCount] = useState<number | null>(null);
@@ -155,15 +165,26 @@ export default function SyllabusPage() {
         <Menu className="mt-1 text-[#71847e]" size={21} />
       </header>
       <div className="mb-5 flex gap-2">
-        {LEVELS.map((l) => (
-          <button
-            key={l}
-            onClick={() => setLevel(l)}
-            className={`h-10 w-[68px] rounded-full border text-base shadow-[0_2px_7px_#31584b14] ${l === level ? "!border-[#2f7168] !bg-[#2f7168] font-bold !text-white" : "!border-[#e1ebe6] !bg-white font-semibold text-[#506762]"}`}
-          >
-            {l}
-          </button>
-        ))}
+        {LEVELS.map((l) => {
+          const unlocked = unlockedLevels.includes(l);
+          return (
+            <button
+              key={l}
+              onClick={() => unlocked && setLevel(l)}
+              disabled={!unlocked}
+              title={unlocked ? undefined : "Finish the level before this one first"}
+              className={`flex h-10 w-[68px] items-center justify-center gap-1 rounded-full border text-base shadow-[0_2px_7px_#31584b14] ${
+                l === level
+                  ? "!border-[#2f7168] !bg-[#2f7168] font-bold !text-white"
+                  : unlocked
+                    ? "!border-[#e1ebe6] !bg-white font-semibold text-[#506762]"
+                    : "cursor-not-allowed !border-[#e1ebe6] !bg-[#f3f0e9] font-semibold text-[#b7bcb8]"
+              }`}
+            >
+              {unlocked ? l : <Lock size={13} />}
+            </button>
+          );
+        })}
       </div>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[18px] font-bold">
