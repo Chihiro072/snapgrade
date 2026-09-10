@@ -1,8 +1,10 @@
 "use client";
 
 import { Camera, ChevronRight, Menu, Printer } from "lucide-react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+import { getSupabaseClient } from "@/lib/supabase";
 
 const lessons = [
   {
@@ -48,6 +50,40 @@ const lessons = [
 
 export default function SyllabusPage() {
   const router = useRouter();
+  const [printingId, setPrintingId] = useState<string | null>(null);
+  const [printError, setPrintError] = useState<{ lessonId: string; message: string } | null>(
+    null,
+  );
+
+  async function printWorksheet(lessonId: string) {
+    setPrintError(null);
+    setPrintingId(lessonId);
+    try {
+      const {
+        data: { session },
+      } = await getSupabaseClient().auth.getSession();
+      if (!session) throw new Error("Please log in to print a worksheet.");
+
+      const res = await fetch(`/api/worksheet?lessonId=${lessonId}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? "Could not generate the worksheet.");
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+    } catch (err) {
+      setPrintError({
+        lessonId,
+        message: err instanceof Error ? err.message : "Something went wrong.",
+      });
+    } finally {
+      setPrintingId(null);
+    }
+  }
+
   return (
     <AppShell>
       <header className="mb-5 flex justify-between">
@@ -102,12 +138,21 @@ export default function SyllabusPage() {
               ))}
             </div>
             <div className="flex items-center gap-2 !border-t !border-[#dce8e2] pt-4">
-              <button className="flex flex-1 items-center gap-2 text-base font-semibold !text-[#2f7168]">
+              <button
+                onClick={() => printWorksheet(lesson.id)}
+                disabled={printingId === lesson.id}
+                className="flex flex-1 items-center gap-2 text-base font-semibold !text-[#2f7168] disabled:opacity-50"
+              >
                 <Printer size={20} />
-                Print A4 Worksheet (PDF)
+                {printingId === lesson.id
+                  ? "Preparing worksheet…"
+                  : "Print A4 Worksheet (PDF)"}
                 <ChevronRight className="ml-auto" size={21} />
               </button>
             </div>
+            {printError?.lessonId === lesson.id && (
+              <p className="mt-2 text-xs text-[#d36b60]">{printError.message}</p>
+            )}
             <button
               onClick={() => router.push(`/camera?lessonId=${lesson.id}`)}
               className="mt-3 flex w-full items-center justify-center gap-2 rounded-full !bg-[#2f7168] py-3 text-sm font-semibold !text-white"
