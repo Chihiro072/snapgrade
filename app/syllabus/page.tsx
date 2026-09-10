@@ -29,6 +29,7 @@ type LessonRow = {
 export default function SyllabusPage() {
   const [level, setLevel] = useState<Level>("P2");
   const [lessons, setLessons] = useState<LessonRow[]>([]);
+  const [totalLessonCount, setTotalLessonCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [printingId, setPrintingId] = useState<string | null>(null);
@@ -58,6 +59,22 @@ export default function SyllabusPage() {
       live = false;
     };
   }, [level]);
+
+  // Total across every level, not just the one currently selected — the
+  // header badge describes the whole syllabus, so it shouldn't change
+  // when you switch tabs.
+  useEffect(() => {
+    let live = true;
+    getSupabaseClient()
+      .from("lessons")
+      .select("id", { count: "exact", head: true })
+      .then(({ count }) => {
+        if (live) setTotalLessonCount(count ?? null);
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   async function printWorksheet(lessonId: string) {
     setPrintError(null);
@@ -114,7 +131,9 @@ export default function SyllabusPage() {
         <h2 className="text-[18px] font-bold">
           {level} MOE Primary {level.slice(1)} Syllabus
         </h2>
-        <span className="text-sm text-[#96a5a1]">24 Lessons Total</span>
+        <span className="text-sm text-[#96a5a1]">
+          {totalLessonCount ?? "…"} Lessons Total
+        </span>
       </div>
       {loading ? (
         <p className="py-10 text-center text-sm text-[#71847e]">Loading lessons…</p>

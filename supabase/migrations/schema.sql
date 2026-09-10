@@ -39,13 +39,17 @@ values
     '[{"word":"红色","pinyin":"hóng sè"},{"word":"黄色","pinyin":"huáng sè"},{"word":"蓝色","pinyin":"lán sè"}]'::jsonb),
   ('b1000000-0000-4000-8000-000000000003', '第三课 - 动物朋友', 'P1', 3, 'dòng wù péng yǒu', 'Needs Revision', 'red',
     '[{"word":"小狗","pinyin":"xiǎo gǒu"},{"word":"小猫","pinyin":"xiǎo māo"},{"word":"小鸟","pinyin":"xiǎo niǎo"}]'::jsonb),
+  ('b1000000-0000-4000-8000-000000000004', '第四课 - 数字', 'P1', 4, 'shù zì', 'Pending Practice', 'amber',
+    '[{"word":"一","pinyin":"yī"},{"word":"二","pinyin":"èr"},{"word":"三","pinyin":"sān"}]'::jsonb),
 
-  ('a0000000-0000-4000-8000-000000000004', '第十课 - 我们的校园', 'P2', 4, 'wǒ men de xiào yuán', 'Pending Practice', 'amber',
-    '[{"word":"校园","pinyin":"xiào yuán"},{"word":"操场","pinyin":"cāo chǎng"},{"word":"老师","pinyin":"lǎo shī"},{"word":"礼堂","pinyin":"lǐ táng"}]'::jsonb),
-  ('a0000000-0000-4000-8000-000000000003', '第九课 - 我爱我的家', 'P2', 3, 'wǒ ài wǒ de jiā', 'Completed (80%)', 'green',
-    '[{"word":"爸爸","pinyin":"bà ba"},{"word":"妈妈","pinyin":"mā ma"},{"word":"温暖","pinyin":"wēn nuǎn"}]'::jsonb),
-  ('a0000000-0000-4000-8000-000000000002', '第八课 - 快乐的周末', 'P2', 2, 'kuài lè de zhōu mò', 'Needs Revision', 'red',
+  ('a0000000-0000-4000-8000-000000000002', '第八课 - 快乐的周末', 'P2', 1, 'kuài lè de zhōu mò', 'Needs Revision', 'red',
     '[{"word":"玩耍","pinyin":"wán shuǎ"},{"word":"公园","pinyin":"gōng yuán"}]'::jsonb),
+  ('a0000000-0000-4000-8000-000000000003', '第九课 - 我爱我的家', 'P2', 2, 'wǒ ài wǒ de jiā', 'Completed (80%)', 'green',
+    '[{"word":"爸爸","pinyin":"bà ba"},{"word":"妈妈","pinyin":"mā ma"},{"word":"温暖","pinyin":"wēn nuǎn"}]'::jsonb),
+  ('a0000000-0000-4000-8000-000000000004', '第十课 - 我们的校园', 'P2', 3, 'wǒ men de xiào yuán', 'Pending Practice', 'amber',
+    '[{"word":"校园","pinyin":"xiào yuán"},{"word":"操场","pinyin":"cāo chǎng"},{"word":"老师","pinyin":"lǎo shī"},{"word":"礼堂","pinyin":"lǐ táng"}]'::jsonb),
+  ('a0000000-0000-4000-8000-000000000001', '第十一课 - 我的一天', 'P2', 4, 'wǒ de yī tiān', 'Pending Practice', 'amber',
+    '[{"word":"早上","pinyin":"zǎo shang"},{"word":"晚上","pinyin":"wǎn shang"},{"word":"时间","pinyin":"shí jiān"}]'::jsonb),
 
   ('b3000000-0000-4000-8000-000000000001', '第十一课 - 我的学校', 'P3', 1, 'wǒ de xué xiào', 'Completed (85%)', 'green',
     '[{"word":"图书馆","pinyin":"tú shū guǎn"},{"word":"走廊","pinyin":"zǒu láng"},{"word":"食堂","pinyin":"shí táng"}]'::jsonb),
@@ -53,6 +57,8 @@ values
     '[{"word":"下雨","pinyin":"xià yǔ"},{"word":"晴天","pinyin":"qíng tiān"},{"word":"刮风","pinyin":"guā fēng"}]'::jsonb),
   ('b3000000-0000-4000-8000-000000000003', '第十三课 - 交通工具', 'P3', 3, 'jiāo tōng gōng jù', 'Needs Revision', 'red',
     '[{"word":"巴士","pinyin":"bā shì"},{"word":"德士","pinyin":"dé shì"},{"word":"地铁","pinyin":"dì tiě"}]'::jsonb),
+  ('b3000000-0000-4000-8000-000000000004', '第十四课 - 我的爱好', 'P3', 4, 'wǒ de ài hào', 'Completed (80%)', 'green',
+    '[{"word":"画画","pinyin":"huà huà"},{"word":"唱歌","pinyin":"chàng gē"},{"word":"跳舞","pinyin":"tiào wǔ"}]'::jsonb),
 
   ('b4000000-0000-4000-8000-000000000001', '第十四课 - 环境保护', 'P4', 1, 'huán jìng bǎo hù', 'Pending Practice', 'amber',
     '[{"word":"回收","pinyin":"huí shōu"},{"word":"节约","pinyin":"jié yuē"},{"word":"污染","pinyin":"wū rǎn"}]'::jsonb),
@@ -60,6 +66,8 @@ values
     '[{"word":"运动","pinyin":"yùn dòng"},{"word":"均衡","pinyin":"jūn héng"},{"word":"休息","pinyin":"xiū xi"}]'::jsonb),
   ('b4000000-0000-4000-8000-000000000003', '第十六课 - 传统节日', 'P4', 3, 'chuán tǒng jié rì', 'Needs Revision', 'red',
     '[{"word":"春节","pinyin":"chūn jié"},{"word":"中秋节","pinyin":"zhōng qiū jié"},{"word":"元宵节","pinyin":"yuán xiāo jié"}]'::jsonb),
+  ('b4000000-0000-4000-8000-000000000004', '第十七课 - 安全意识', 'P4', 4, 'ān quán yì shí', 'Pending Practice', 'amber',
+    '[{"word":"安全","pinyin":"ān quán"},{"word":"危险","pinyin":"wēi xiǎn"},{"word":"小心","pinyin":"xiǎo xīn"}]'::jsonb),
 
   ('b5000000-0000-4000-8000-000000000001', '第十七课 - 科技生活', 'P5', 1, 'kē jì shēng huó', 'Completed (76%)', 'green',
     '[{"word":"电脑","pinyin":"diàn nǎo"},{"word":"网络","pinyin":"wǎng luò"},{"word":"手机","pinyin":"shǒu jī"}]'::jsonb),
@@ -67,13 +75,17 @@ values
     '[{"word":"义工","pinyin":"yì gōng"},{"word":"关怀","pinyin":"guān huái"},{"word":"社区","pinyin":"shè qū"}]'::jsonb),
   ('b5000000-0000-4000-8000-000000000003', '第十九课 - 可持续发展', 'P5', 3, 'kě chí xù fā zhǎn', 'Needs Revision', 'red',
     '[{"word":"资源","pinyin":"zī yuán"},{"word":"循环","pinyin":"xún huán"},{"word":"再造","pinyin":"zài zào"}]'::jsonb),
+  ('b5000000-0000-4000-8000-000000000004', '第二十课 - 时事新闻', 'P5', 4, 'shí shì xīn wén', 'Completed (79%)', 'green',
+    '[{"word":"新闻","pinyin":"xīn wén"},{"word":"报道","pinyin":"bào dào"},{"word":"事件","pinyin":"shì jiàn"}]'::jsonb),
 
   ('b6000000-0000-4000-8000-000000000001', '第二十课 - 价值观', 'P6', 1, 'jià zhí guān', 'Needs Revision', 'red',
     '[{"word":"诚实","pinyin":"chéng shí"},{"word":"勇敢","pinyin":"yǒng gǎn"},{"word":"坚持","pinyin":"jiān chí"}]'::jsonb),
   ('b6000000-0000-4000-8000-000000000002', '第二十一课 - 国民教育', 'P6', 2, 'guó mín jiào yù', 'Pending Practice', 'amber',
     '[{"word":"独立","pinyin":"dú lì"},{"word":"团结","pinyin":"tuán jié"},{"word":"种族","pinyin":"zhǒng zú"}]'::jsonb),
   ('b6000000-0000-4000-8000-000000000003', '第二十二课 - 写作技巧', 'P6', 3, 'xiě zuò jì qiǎo', 'Completed (72%)', 'green',
-    '[{"word":"观点","pinyin":"guān diǎn"},{"word":"论据","pinyin":"lùn jù"},{"word":"总结","pinyin":"zǒng jié"}]'::jsonb)
+    '[{"word":"观点","pinyin":"guān diǎn"},{"word":"论据","pinyin":"lùn jù"},{"word":"总结","pinyin":"zǒng jié"}]'::jsonb),
+  ('b6000000-0000-4000-8000-000000000004', '第二十三课 - 演讲技巧', 'P6', 4, 'yǎn jiǎng jì qiǎo', 'Needs Revision', 'red',
+    '[{"word":"演讲","pinyin":"yǎn jiǎng"},{"word":"自信","pinyin":"zì xìn"},{"word":"表达","pinyin":"biǎo dá"}]'::jsonb)
 on conflict (id) do update set
   title = excluded.title,
   moe_level = excluded.moe_level,

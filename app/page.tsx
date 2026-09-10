@@ -211,7 +211,7 @@ function Dashboard() {
             <Bell size={16} />
           </div>
           <div>
-            <strong>Week 4: (第十课) Spelling Test</strong>
+            <strong>Week 3: (第十课) Spelling Test</strong>
             <p>Wednesday, 14 Oct at 3:00 PM · P2 MOE Syllabus</p>
           </div>
         </div>
