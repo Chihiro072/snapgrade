@@ -1,7 +1,53 @@
 "use client";
-import { Check, RotateCcw, Share2, X } from "lucide-react";
+import { RotateCcw, Share2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
+
+function HandDrawnCheck({ size = 21, rotate = 0 }: { size?: number; rotate?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      style={{ transform: `rotate(${rotate - 3}deg)` }}
+    >
+      <path
+        d="M3.8 12.2c1.6 1.3 3.5 3.1 4.9 4.8 3.1-5.4 7.3-11 11.5-15.4"
+        stroke="currentColor"
+        strokeWidth="2.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function HandDrawnX({ size = 20, rotate = 0 }: { size?: number; rotate?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      style={{ transform: `rotate(${rotate + 1}deg)` }}
+    >
+      <path
+        d="M4.5 4.8c3.2 4.6 8.6 10 15 14.6"
+        stroke="currentColor"
+        strokeWidth="2.8"
+        strokeLinecap="round"
+      />
+      <path
+        d="M19.6 5.6c-4.3 4-9.7 9-15.2 13.6"
+        stroke="currentColor"
+        strokeWidth="2.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 const rows = [
   ["操场", "cāo chǎng", "x", "x", "ok"],
   ["礼堂", "lǐ táng", "x", "x", "x"],
@@ -68,7 +114,11 @@ export default function ResultsPage() {
                   key={i}
                   className={`grid place-items-center border-l border-[#e6ece8] ${mark === "ok" ? "text-[#438c76]" : "text-[#d56d67]"}`}
                 >
-                  {mark === "ok" ? <Check size={21} /> : <X size={20} />}
+                  {mark === "ok" ? (
+                    <HandDrawnCheck size={21} rotate={((index + i) % 3) - 1} />
+                  ) : (
+                    <HandDrawnX size={20} rotate={((index + i) % 3) - 1} />
+                  )}
                 </span>
               ))}
             </div>
