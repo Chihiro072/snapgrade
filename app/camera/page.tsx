@@ -1,6 +1,7 @@
 "use client";
 
 import { Flashlight, FlashlightOff, X } from "lucide-react";
+import jsQR from "jsqr";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -13,6 +14,21 @@ const STAGE_LABEL: Record<Stage, string> = {
   uploading: "Uploading worksheet…",
   grading: "Grading handwriting…",
 };
+
+const LESSON_QR_PREFIX = "snapgrade:lesson:";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function readWorksheetLessonId(canvas: HTMLCanvasElement): string | null {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return null;
+  const image = context.getImageData(0, 0, canvas.width, canvas.height);
+  const value = jsQR(image.data, image.width, image.height, {
+    inversionAttempts: "attemptBoth",
+  })?.data;
+  if (!value?.startsWith(LESSON_QR_PREFIX)) return null;
+  const lessonId = value.slice(LESSON_QR_PREFIX.length);
+  return UUID_PATTERN.test(lessonId) ? lessonId : null;
+}
 
 function CameraContent() {
   const router = useRouter();
@@ -103,12 +119,20 @@ function CameraContent() {
       );
       if (!blob) throw new Error("Could not capture a frame from the camera.");
 
+      const qrLessonId = readWorksheetLessonId(canvas);
+      const resolvedLessonId = qrLessonId ?? lessonId;
+      if (!resolvedLessonId) {
+        throw new Error(
+          "Worksheet code not found. Keep the full page, including the small code at top right, inside the frame.",
+        );
+      }
+
       const file = new File([blob], `worksheet-${Date.now()}.jpg`, {
         type: "image/jpeg",
       });
       const formData = new FormData();
       formData.append("file", file);
-      if (lessonId) formData.append("lessonId", lessonId);
+      formData.append("lessonId", resolvedLessonId);
 
       const uploadRes = await fetch("/api/upload", {
         method: "POST",

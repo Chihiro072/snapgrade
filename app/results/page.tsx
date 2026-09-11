@@ -58,26 +58,21 @@ type Submission = {
   status: "pending" | "graded" | "failed";
   lesson_id: string | null;
   lessons: { title: string } | null;
-  image_path: string;
 };
 
 type CharacterResult = {
   submission_id: string;
   character_name: string;
   status: "correct" | "incorrect";
-  box_x: number | null;
-  box_y: number | null;
 };
 
-type Column = { id: string; submitted_at: string } | null;
+type Column = { id: string; submitted_at: string };
 
 type ResultsData = {
   target: Submission;
   columns: Column[];
   words: string[];
   statusByKey: Map<string, "correct" | "incorrect">;
-  corrections: Array<{ character: string; x: number; y: number }>;
-  imageUrl: string | null;
 };
 
 function formatColumnDate(iso: string) {
@@ -122,7 +117,7 @@ function ResultsContent() {
       }
 
       const submissionSelect =
-        "id, submitted_at, total_score, status, lesson_id, image_path, lessons(title)";
+        "id, submitted_at, total_score, status, lesson_id, lessons(title)";
       let target: Submission | null = null;
       if (submissionId) {
         const { data: row, error: fetchError } = await supabase
@@ -162,21 +157,19 @@ function ResultsContent() {
         .limit(3);
       if (target.lesson_id) historyQuery = historyQuery.eq("lesson_id", target.lesson_id);
       const { data: historyRaw } = await historyQuery;
-      let history = (historyRaw ?? []).slice().reverse();
-      if (!history.some((h) => h.id === target!.id)) {
-        history = [...history, { id: target.id, submitted_at: target.submitted_at }]
-          .sort((a, b) => a.submitted_at.localeCompare(b.submitted_at))
-          .slice(-3);
-      }
-      const columns: Column[] = Array.from(
-        { length: 3 },
-        (_, i) => history[history.length - 3 + i] ?? null,
-      );
+      // Render only real attempts. First scan: one column. Later attempts:
+      // append columns, retaining the three most recent.
+      const uniqueHistory = new Map<string, Column>();
+      for (const entry of historyRaw ?? []) uniqueHistory.set(entry.id, entry);
+      uniqueHistory.set(target.id, { id: target.id, submitted_at: target.submitted_at });
+      const columns = [...uniqueHistory.values()]
+        .sort((a, b) => a.submitted_at.localeCompare(b.submitted_at))
+        .slice(-3);
 
-      const ids = history.map((h) => h.id);
+      const ids = columns.map((column) => column.id);
       const { data: resultsRaw } = await supabase
         .from("character_results")
-        .select("submission_id, character_name, status, box_x, box_y, created_at")
+        .select("submission_id, character_name, status, created_at")
         .in("submission_id", ids)
         .order("created_at", { ascending: true });
 
@@ -185,25 +178,8 @@ function ResultsContent() {
       const words = targetResults.map((r) => r.character_name);
       const statusByKey = new Map<string, "correct" | "incorrect">();
       for (const r of results) statusByKey.set(`${r.submission_id}:${r.character_name}`, r.status);
-      const corrections = targetResults
-        .filter(
-          (r): r is CharacterResult & { box_x: number; box_y: number } =>
-            r.status === "incorrect" && r.box_x != null && r.box_y != null,
-        )
-        .map((r) => ({ character: r.character_name, x: r.box_x, y: r.box_y }));
-
-      // The bucket is private, so image_path needs a freshly-signed URL to
-      // actually be viewable — one generated at upload time would go stale.
-      let imageUrl: string | null = null;
-      if (target!.image_path) {
-        const { data: signed } = await supabase.storage
-          .from("worksheets")
-          .createSignedUrl(target!.image_path, 60 * 60);
-        imageUrl = signed?.signedUrl ?? null;
-      }
-
       if (live) {
-        setData({ target: target!, columns, words, statusByKey, corrections, imageUrl });
+        setData({ target: target!, columns, words, statusByKey });
         setLoading(false);
       }
     }
@@ -239,7 +215,7 @@ function ResultsContent() {
     );
   }
 
-  const { target, columns, words, statusByKey, corrections, imageUrl } = data;
+  const { target, columns, words, statusByKey } = data;
   const correctCount = words.filter(
     (w) => statusByKey.get(`${target.id}:${w}`) === "correct",
   ).length;
@@ -301,57 +277,16 @@ function ResultsContent() {
             )}
           </div>
         </section>
-        {imageUrl && (
-          <>
-            <h2 className="mt-5 text-sm font-bold">Corrected Worksheet</h2>
-            <section className="relative mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
-              <img
-                src={imageUrl}
-                alt="Captured worksheet"
-                className="block w-full"
-              />
-              {target.status === "graded" &&
-                corrections.map((mark, i) => (
-                  <div
-                    key={`${mark.character}-${i}`}
-                    className="pointer-events-none absolute"
-                    style={{
-                      left: `${mark.x * 100}%`,
-                      top: `${mark.y * 100}%`,
-                      transform: "translate(-50%, -50%)",
-                    }}
-                  >
-                    <span
-                      className="absolute left-1/2 top-1/2 block size-16 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[#e0362c]/80"
-                      style={{ transform: "translate(-50%, -50%) rotate(-6deg)" }}
-                    />
-                    <span
-                      className="absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap rounded bg-white/90 px-1 text-base font-bold text-[#e0362c]"
-                      style={{
-                        fontFamily:
-                          '"Segoe Print","Bradley Hand","Comic Sans MS",cursive',
-                        transform: "rotate(-4deg)",
-                      }}
-                    >
-                      {mark.character}
-                    </span>
-                  </div>
-                ))}
-            </section>
-            {target.status === "graded" && corrections.length === 0 && missedCount > 0 && (
-              <p className="mt-1 text-[10px] text-[#90a19c]">
-                Positions for the missed characters weren&apos;t available for this scan.
-              </p>
-            )}
-          </>
-        )}
         <h2 className="mt-5 text-sm font-bold">Results over time</h2>
         <section className="mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
-          <div className="grid grid-cols-[1.45fr_repeat(3,1fr)] bg-[#eaf3ef] text-[10px]">
+          <div
+            className="grid bg-[#eaf3ef] text-[10px]"
+            style={{ gridTemplateColumns: `1.45fr repeat(${columns.length}, minmax(0, 1fr))` }}
+          >
             <span className="p-3">Character</span>
             {columns.map((col, i) => (
               <span key={i} className="border-l border-[#d6e4de] p-3 text-center">
-                {col ? formatColumnDate(col.submitted_at) : "–"}
+                {formatColumnDate(col.submitted_at)}
               </span>
             ))}
           </div>
@@ -363,7 +298,8 @@ function ResultsContent() {
             words.map((word, index) => (
               <div
                 key={word}
-                className={`grid min-h-12 grid-cols-[1.45fr_repeat(3,1fr)] border-t ${index % 2 ? "bg-[#fbf7f0]" : "bg-white"}`}
+                className={`grid min-h-12 border-t ${index % 2 ? "bg-[#fbf7f0]" : "bg-white"}`}
+                style={{ gridTemplateColumns: `1.45fr repeat(${columns.length}, minmax(0, 1fr))` }}
               >
                 <span className="flex flex-col justify-center px-5 py-2">
                   <strong className="block text-lg font-extrabold">{word}</strong>
@@ -374,7 +310,7 @@ function ResultsContent() {
                   )}
                 </span>
                 {columns.map((col, i) => {
-                  const mark = col ? statusByKey.get(`${col.id}:${word}`) : undefined;
+                  const mark = statusByKey.get(`${col.id}:${word}`);
                   return (
                     <span
                       key={i}
