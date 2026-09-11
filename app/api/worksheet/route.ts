@@ -4,6 +4,8 @@ import { renderWorksheetPdf } from "@/lib/worksheet";
 import { extractWords } from "@/lib/words";
 
 export const runtime = "nodejs";
+// Rasterizing a multi-page worksheet is CPU-intensive on a cold function.
+export const maxDuration = 60;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

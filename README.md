@@ -24,6 +24,24 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
+## Deploy to Vercel
+
+1. Push this repository to GitHub, then import it in [Vercel](https://vercel.com/new).
+2. Leave the framework preset as **Next.js** and use the default build command (`npm run build`).
+3. In **Project Settings → Environment Variables**, add these values for Production, Preview, and Development:
+
+   ```text
+   NEXT_PUBLIC_SUPABASE_URL
+   NEXT_PUBLIC_SUPABASE_ANON_KEY
+   GEMINI_API_KEY
+   OPENROUTER_API_KEY
+   ```
+
+   `GEMINI_API_KEY` and `OPENROUTER_API_KEY` are server-only secrets. Do not prefix either with `NEXT_PUBLIC_`.
+4. In Supabase Auth, add your Vercel URL (and later any custom domain) to the allowed redirect URLs/site URL. Keep the existing localhost URL for local development.
+
+The worksheet endpoint uses the Node.js runtime and `sharp` is a direct production dependency, so Vercel installs the native image binary required to generate PDFs. Grading and worksheet functions allow up to 60 seconds to complete.
+
 ## Learn More
 
 To learn more, take a look at the following resources:

@@ -4,6 +4,9 @@ import { getSupabaseServerClient } from "@/lib/supabase";
 import { DEFAULT_WORD_LIST, extractWords } from "@/lib/words";
 
 export const runtime = "nodejs";
+// Vision-model calls and Storage downloads can exceed Vercel's short default.
+// This remains within the maximum duration available on Vercel Hobby.
+export const maxDuration = 60;
 
 export async function POST(request: Request) {
   const authHeader = request.headers.get("authorization") ?? "";

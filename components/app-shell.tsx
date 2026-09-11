@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import Image from "next/image";
 import {
   Bell,
   BookOpen,
@@ -70,12 +71,19 @@ export function AppShell({
       >
         <button
           onClick={() => router.push("/")}
-          className="hidden items-center gap-2 text-sm font-bold text-[#315e57] md:flex"
+          aria-label="Go to dashboard"
+          className="hidden h-9 w-[138px] items-center overflow-hidden md:flex"
         >
-          <span className="grid size-7 place-items-center rounded-full bg-[#eaf3ee] text-[#2f7168]">
-            S
+          <span className="relative block h-8 w-full overflow-hidden">
+            <Image
+              src="/logo.png"
+              alt="SnapGrade"
+              width={1448}
+              height={1086}
+              priority
+              className="absolute left-1/2 top-1/2 w-[170px] max-w-none -translate-x-1/2 -translate-y-1/2"
+            />
           </span>
-          Ting Xie
         </button>
         <nav className="mx-auto hidden items-center gap-2 md:flex">
           {navigation.map(({ href, label }) => (
