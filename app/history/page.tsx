@@ -8,6 +8,7 @@ import { getSupabaseClient } from "@/lib/supabase";
 
 type Attempt = {
   id: string;
+  lesson_id: string | null;
   title: string;
   submitted_at: string;
   total_score: number | null;
@@ -44,7 +45,7 @@ export default function HistoryPage() {
       // submission isn't a completed attempt yet.
       const { data, error: fetchError } = await supabase
         .from("submissions")
-        .select("id, submitted_at, total_score, lessons(title)")
+        .select("id, lesson_id, submitted_at, total_score, lessons(title)")
         .eq("status", "graded")
         .order("submitted_at", { ascending: false });
       if (!live) return;
@@ -52,15 +53,22 @@ export default function HistoryPage() {
         setError(fetchError.message);
         return;
       }
-      setAttempts(
-        (data ?? []).map((row) => ({
+      const latestAttemptByLesson = new Map<string, Attempt>();
+      for (const row of data ?? []) {
+        const attempt: Attempt = {
           id: row.id as string,
+          lesson_id: row.lesson_id as string | null,
           title:
             (row.lessons as unknown as { title: string } | null)?.title ?? "Practice Test",
           submitted_at: row.submitted_at as string,
           total_score: row.total_score as number | null,
-        })),
-      );
+        };
+        // Query is newest-first, so retain only the latest completed attempt
+        // for each Syllabus lesson on this overview screen.
+        const key = attempt.lesson_id ?? `submission:${attempt.id}`;
+        if (!latestAttemptByLesson.has(key)) latestAttemptByLesson.set(key, attempt);
+      }
+      setAttempts([...latestAttemptByLesson.values()]);
     }
     load();
     return () => {
