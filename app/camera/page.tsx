@@ -1,6 +1,6 @@
 "use client";
 
-import { Flashlight, FlashlightOff, X } from "lucide-react";
+import { X, Zap } from "lucide-react";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -142,19 +142,19 @@ function CameraContent() {
       <header className="absolute inset-x-0 top-0 z-10 flex items-center justify-between p-5">
         <button
           onClick={() => router.back()}
-          className="grid size-10 place-items-center rounded-full bg-black/45"
+          className="grid size-8 place-items-center rounded-full bg-black/50"
         >
-          <X />
+          <X size={18} strokeWidth={2.5} />
         </button>
-        <strong className="max-w-[55%] truncate text-sm">
+        <strong className="max-w-[55%] truncate text-[11px]">
           Align Worksheet
         </strong>
         <button
           onClick={toggleFlash}
           aria-label="Toggle flash"
-          className="grid size-10 place-items-center rounded-full bg-black/45"
+          className="grid size-8 place-items-center rounded-full bg-black/50"
         >
-          {flash ? <Flashlight size={19} /> : <FlashlightOff size={19} />}
+          <Zap size={16} fill={flash ? "currentColor" : "none"} strokeWidth={2.5} />
         </button>
       </header>
       {error && (
