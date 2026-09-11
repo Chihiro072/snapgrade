@@ -128,6 +128,9 @@ export default function SyllabusPage() {
     setPrintError(null);
     setPrintingId(lessonId);
     try {
+      // The Dashboard scanner uses this lesson after the print-to-practice
+      // flow, avoiding course guesswork or an extra course-picker screen.
+      window.localStorage.setItem("snapgrade:lastLessonId", lessonId);
       const {
         data: { session },
       } = await getSupabaseClient().auth.getSession();

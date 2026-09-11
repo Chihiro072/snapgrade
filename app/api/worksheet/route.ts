@@ -47,7 +47,6 @@ export async function GET(request: Request) {
   const wordList = extractWords(lesson.word_list);
 
   const pdfBytes = await renderWorksheetPdf({
-    id: lessonId,
     title: lesson.title,
     moe_level: lesson.moe_level,
     week_number: lesson.week_number,

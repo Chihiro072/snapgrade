@@ -6,6 +6,8 @@ import {
 
 export type { CharacterGrade };
 
+// The project brief names Gemini 1.5 Flash, but that model now returns 404
+// from the configured Gemini API. Use its current supported Flash successor.
 const MODEL = "gemini-3.6-flash";
 
 /** Thrown when Gemini's free-tier quota is exhausted, so callers can fall

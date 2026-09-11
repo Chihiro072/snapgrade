@@ -1,7 +1,6 @@
 "use client";
 
 import { Flashlight, FlashlightOff, X } from "lucide-react";
-import jsQR from "jsqr";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -15,21 +14,6 @@ const STAGE_LABEL: Record<Stage, string> = {
   grading: "Grading handwriting…",
 };
 
-const LESSON_QR_PREFIX = "snapgrade:lesson:";
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function readWorksheetLessonId(canvas: HTMLCanvasElement): string | null {
-  const context = canvas.getContext("2d", { willReadFrequently: true });
-  if (!context) return null;
-  const image = context.getImageData(0, 0, canvas.width, canvas.height);
-  const value = jsQR(image.data, image.width, image.height, {
-    inversionAttempts: "attemptBoth",
-  })?.data;
-  if (!value?.startsWith(LESSON_QR_PREFIX)) return null;
-  const lessonId = value.slice(LESSON_QR_PREFIX.length);
-  return UUID_PATTERN.test(lessonId) ? lessonId : null;
-}
-
 function CameraContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -40,22 +24,6 @@ function CameraContent() {
   const [error, setError] = useState("");
   const [flash, setFlash] = useState(false);
   const [stage, setStage] = useState<Stage>("idle");
-  const [lessonTitle, setLessonTitle] = useState("");
-  useEffect(() => {
-    if (!lessonId) return setLessonTitle("");
-    let live = true;
-    getSupabaseClient()
-      .from("lessons")
-      .select("title")
-      .eq("id", lessonId)
-      .single()
-      .then(({ data }) => {
-        if (live) setLessonTitle(data?.title ?? "");
-      });
-    return () => {
-      live = false;
-    };
-  }, [lessonId]);
   useEffect(() => {
     let live = true;
     navigator.mediaDevices
@@ -119,10 +87,10 @@ function CameraContent() {
       );
       if (!blob) throw new Error("Could not capture a frame from the camera.");
 
-      const resolvedLessonId = readWorksheetLessonId(canvas);
+      const resolvedLessonId = lessonId ?? window.localStorage.getItem("snapgrade:lastLessonId");
       if (!resolvedLessonId) {
         throw new Error(
-          "Worksheet code not found. Keep the full page, including the small code at top right, inside the frame.",
+          "Select and print a worksheet from Syllabus before scanning it.",
         );
       }
 
@@ -179,7 +147,7 @@ function CameraContent() {
           <X />
         </button>
         <strong className="max-w-[55%] truncate text-sm">
-          {lessonTitle || "Align Worksheet"}
+          Align Worksheet
         </strong>
         <button
           onClick={toggleFlash}
@@ -199,10 +167,10 @@ function CameraContent() {
         <i className="absolute right-0 top-0 size-9 border-r-4 border-t-4" />
         <i className="absolute bottom-0 left-0 size-9 border-b-4 border-l-4" />
         <i className="absolute bottom-0 right-0 size-9 border-b-4 border-r-4" />
+        <p className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/55 px-3 py-2 text-xs">
+          Keep page flat and inside the brackets
+        </p>
       </div>
-      <p className="absolute bottom-36 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/55 px-3 py-2 text-xs">
-        Keep page flat and inside the brackets
-      </p>
       <div className="absolute inset-x-0 bottom-10 z-10 flex flex-col items-center">
         <button
           disabled={stage !== "idle"}

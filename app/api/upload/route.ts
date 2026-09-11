@@ -35,6 +35,12 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  if (typeof lessonId !== "string" || !lessonId) {
+    return NextResponse.json(
+      { error: "Select and print a Syllabus worksheet before scanning." },
+      { status: 400 },
+    );
+  }
 
   const extension = file.type === "image/png" ? "png" : "jpg";
   const path = `${user.id}/${randomUUID()}.${extension}`;
@@ -56,7 +62,7 @@ export async function POST(request: Request) {
     .from("submissions")
     .insert({
       student_id: user.id,
-      lesson_id: typeof lessonId === "string" && lessonId ? lessonId : null,
+      lesson_id: lessonId,
       image_path: path,
       status: "pending",
     })
