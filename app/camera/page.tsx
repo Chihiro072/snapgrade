@@ -176,9 +176,6 @@ function CameraContent() {
         <i className="absolute right-0 top-0 size-9 border-r-4 border-t-4" />
         <i className="absolute bottom-0 left-0 size-9 border-b-4 border-l-4" />
         <i className="absolute bottom-0 right-0 size-9 border-b-4 border-r-4" />
-        <div className="absolute right-4 top-4 grid size-16 place-items-center rounded border-2 border-dashed border-white/80 text-[7px]">
-          QR target
-        </div>
       </div>
       <p className="absolute bottom-36 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/55 px-3 py-2 text-xs">
         Keep page flat and inside the brackets

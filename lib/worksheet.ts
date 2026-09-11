@@ -11,12 +11,12 @@ const PAGE_H = Math.round(11.69 * DPI);
 const A4_POINTS_W = 595.28;
 const A4_POINTS_H = 841.89;
 
-const MARGIN = 70;
-const CELL = 130;
+const MARGIN = 55;
+const CELL = 100;
 const CELL_GAP = 12;
-const CELLS_PER_ROW = 6;
-const ROWS_FIRST_PAGE = 5;
-const ROWS_OTHER_PAGES = 6;
+const CELLS_PER_CHARACTER = 3;
+const ROWS_FIRST_PAGE = 10;
+const ROWS_OTHER_PAGES = 11;
 
 export type WorksheetLesson = {
   title: string;
@@ -32,18 +32,18 @@ function escapeXml(value: string) {
     .replace(/>/g, "&gt;");
 }
 
-function cellSvg(x: number, y: number, guideChar?: string) {
+function cellSvg(x: number, y: number, size: number, guideChar?: string) {
   const guide = guideChar
-    ? `<text x="${x + CELL / 2}" y="${y + CELL / 2 + CELL * 0.32}" font-size="${CELL * 0.72}" text-anchor="middle" font-family="SimSun, 'Microsoft YaHei', 'Noto Sans SC', sans-serif" fill="#c7c7c7">${escapeXml(guideChar)}</text>`
+    ? `<text x="${x + size / 2}" y="${y + size / 2 + size * 0.32}" font-size="${size * 0.72}" text-anchor="middle" font-family="SimSun, 'Microsoft YaHei', 'Noto Sans SC', sans-serif" fill="#c7c7c7">${escapeXml(guideChar)}</text>`
     : "";
   return `
-    <rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" fill="white" stroke="#333" stroke-width="2"/>
-    <line x1="${x + CELL / 2}" y1="${y}" x2="${x + CELL / 2}" y2="${y + CELL}" stroke="#bbb" stroke-width="1" stroke-dasharray="6,6"/>
-    <line x1="${x}" y1="${y + CELL / 2}" x2="${x + CELL}" y2="${y + CELL / 2}" stroke="#bbb" stroke-width="1" stroke-dasharray="6,6"/>
+    <rect x="${x}" y="${y}" width="${size}" height="${size}" fill="white" stroke="#333" stroke-width="2"/>
+    <line x1="${x + size / 2}" y1="${y}" x2="${x + size / 2}" y2="${y + size}" stroke="#bbb" stroke-width="1" stroke-dasharray="6,6"/>
+    <line x1="${x}" y1="${y + size / 2}" x2="${x + size}" y2="${y + size / 2}" stroke="#bbb" stroke-width="1" stroke-dasharray="6,6"/>
     ${guide}`;
 }
 
-type Row = { word: string; char: string };
+type Row = { word: string; chars: string[] };
 
 function buildPageSvg(
   lesson: WorksheetLesson,
@@ -82,11 +82,21 @@ function buildPageSvg(
     );
     y += 16;
     let x = MARGIN;
-    for (let i = 0; i < CELLS_PER_ROW; i++) {
-      parts.push(cellSvg(x, y, i === 0 ? row.char : undefined));
-      x += CELL + CELL_GAP;
+    // Every character gets its own three-cell practice group. Cell size
+    // tightens only for unusually long words, keeping the word on one row.
+    const cellCount = row.chars.length * CELLS_PER_CHARACTER;
+    const availableWidth = PAGE_W - MARGIN * 2;
+    const cellSize = Math.min(
+      CELL,
+      (availableWidth - CELL_GAP * (cellCount - 1)) / cellCount,
+    );
+    for (let i = 0; i < cellCount; i++) {
+      const characterIndex = Math.floor(i / CELLS_PER_CHARACTER);
+      const isGuideCell = i % CELLS_PER_CHARACTER === 0;
+      parts.push(cellSvg(x, y, cellSize, isGuideCell ? row.chars[characterIndex] : undefined));
+      x += cellSize + CELL_GAP;
     }
-    y += CELL + 40;
+    y += cellSize + 28;
   }
 
   parts.push(
@@ -118,9 +128,7 @@ export async function renderWorksheetPdf(
   lesson: WorksheetLesson,
 ): Promise<Uint8Array> {
   const rows: Row[] = [];
-  for (const word of lesson.word_list) {
-    for (const char of Array.from(word)) rows.push({ word, char });
-  }
+  for (const word of lesson.word_list) rows.push({ word, chars: Array.from(word) });
 
   const pages = paginate(rows);
   const pdfDoc = await PDFDocument.create();

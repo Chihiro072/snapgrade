@@ -50,7 +50,14 @@ export async function gradeWithGemini(
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    if (response.status === 429 || body.includes("RESOURCE_EXHAUSTED")) {
+    // Both quota exhaustion (429) and temporary model overload (503) should
+    // use the vision fallback instead of failing the student's scan.
+    if (
+      response.status === 429 ||
+      response.status === 503 ||
+      body.includes("RESOURCE_EXHAUSTED") ||
+      body.includes("UNAVAILABLE")
+    ) {
       throw new GeminiRateLimitError(
         `Gemini free-tier quota hit (${response.status}): ${body}`,
       );
