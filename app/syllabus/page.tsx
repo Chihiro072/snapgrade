@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Lock, Menu, Printer } from "lucide-react";
+import { ChevronRight, Menu, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -34,10 +34,10 @@ function deriveStatus(latestScore: number | undefined) {
 }
 
 export default function SyllabusPage() {
-  const { grade, unlockedLevels, loading: progressLoading } = useGrade();
+  const { grade, loading: progressLoading } = useGrade();
   // Which level's lessons are shown — defaults to the student's real
-  // current level once progress finishes loading, but browsing an earlier
-  // *unlocked* level afterward shouldn't get yanked back.
+  // current level once progress finishes loading. Every level can then be
+  // selected freely for practice.
   const [level, setLevel] = useState<Level>(grade);
   const [hasSyncedInitialLevel, setHasSyncedInitialLevel] = useState(false);
   useEffect(() => {
@@ -165,26 +165,19 @@ export default function SyllabusPage() {
         <Menu className="mt-1 text-[#71847e]" size={21} />
       </header>
       <div className="mb-5 flex gap-2">
-        {LEVELS.map((l) => {
-          const unlocked = unlockedLevels.includes(l);
-          return (
+        {LEVELS.map((l) => (
             <button
               key={l}
-              onClick={() => unlocked && setLevel(l)}
-              disabled={!unlocked}
-              title={unlocked ? undefined : "Finish the level before this one first"}
+              onClick={() => setLevel(l)}
               className={`flex h-10 w-[68px] items-center justify-center gap-1 rounded-full border text-base shadow-[0_2px_7px_#31584b14] ${
                 l === level
                   ? "!border-[#2f7168] !bg-[#2f7168] font-bold !text-white"
-                  : unlocked
-                    ? "!border-[#e1ebe6] !bg-white font-semibold text-[#506762]"
-                    : "cursor-not-allowed !border-[#e1ebe6] !bg-[#f3f0e9] font-semibold text-[#b7bcb8]"
+                  : "!border-[#e1ebe6] !bg-white font-semibold text-[#506762]"
               }`}
             >
-              {unlocked ? l : <Lock size={13} />}
+              {l}
             </button>
-          );
-        })}
+        ))}
       </div>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[18px] font-bold">

@@ -16,19 +16,18 @@ type GradeContextValue = {
   /** The student's real current level, computed from their own grading
    * history — not a manually picked value. Starts at P1. */
   grade: Grade;
-  /** Levels the student has actually unlocked: P1, plus every level after
-   * it whose predecessor is fully passed. */
+  /** Every syllabus level is available for practice; progress never gates
+   * access to a course. */
   unlockedLevels: Grade[];
   loading: boolean;
-  /** Re-fetch and recompute after a new submission is graded, so the
-   * badge/lock state updates without needing a full reload. */
+  /** Re-fetch and recompute progress after a new submission is graded. */
   refreshProgress: () => void;
 };
 
 const GradeContext = createContext<GradeContextValue | null>(null);
 
 async function computeProgress(): Promise<{ grade: Grade; unlockedLevels: Grade[] }> {
-  const fallback = { grade: "P1" as Grade, unlockedLevels: ["P1"] as Grade[] };
+  const fallback = { grade: "P1" as Grade, unlockedLevels: LEVELS };
   const supabase = getSupabaseClient();
   const {
     data: { session },
@@ -54,24 +53,22 @@ async function computeProgress(): Promise<{ grade: Grade; unlockedLevels: Grade[
     lessonIdsByLevel.get(level)?.push(lesson.id);
   }
 
-  const unlockedLevels: Grade[] = [];
   let grade: Grade = "P1";
   let previousComplete = true;
   for (const level of LEVELS) {
     if (!previousComplete) break;
-    unlockedLevels.push(level);
     grade = level;
     const ids = lessonIdsByLevel.get(level) ?? [];
     previousComplete =
       ids.length > 0 && ids.every((id) => (bestScoreByLesson.get(id) ?? 0) >= PASS_THRESHOLD);
   }
 
-  return { grade, unlockedLevels };
+  return { grade, unlockedLevels: LEVELS };
 }
 
 export function GradeProvider({ children }: { children: ReactNode }) {
   const [grade, setGrade] = useState<Grade>("P1");
-  const [unlockedLevels, setUnlockedLevels] = useState<Grade[]>(["P1"]);
+  const [unlockedLevels, setUnlockedLevels] = useState<Grade[]>(LEVELS);
   const [loading, setLoading] = useState(true);
 
   function refreshProgress() {
