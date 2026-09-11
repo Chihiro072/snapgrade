@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import { gradeWorksheet } from "@/lib/grading";
 import { getSupabaseServerClient } from "@/lib/supabase";
-import { DEFAULT_WORD_LIST, extractWords } from "@/lib/words";
+import { extractWords } from "@/lib/words";
+import {
+  identifyWorksheetLesson,
+  WorksheetNotIdentifiedError,
+  type WorksheetCandidate,
+} from "@/lib/worksheet-identification";
 
 export const runtime = "nodejs";
 // Vision-model calls and Storage downloads can exceed Vercel's short default.
@@ -50,7 +55,8 @@ export async function POST(request: Request) {
     );
   }
 
-  let words: string[] = DEFAULT_WORD_LIST;
+  let words: string[] = [];
+  let resolvedLessonId = submission.lesson_id as string | null;
   if (submission.lesson_id) {
     const { data: lesson } = await supabase
       .from("lessons")
@@ -70,6 +76,34 @@ export async function POST(request: Request) {
     const mimeType = imageBlob.type || "image/jpeg";
     const imageBuffer = Buffer.from(await imageBlob.arrayBuffer());
     const imageBase64 = imageBuffer.toString("base64");
+
+    // Dashboard scans have no selected course. Identify the printed worksheet
+    // against the real Syllabus first, then grade only with that lesson's list.
+    if (!resolvedLessonId) {
+      const { data: lessons, error: lessonsError } = await supabase
+        .from("lessons")
+        .select("id, title, moe_level, week_number, word_list");
+      if (lessonsError || !lessons) throw new Error("Could not load Syllabus lessons.");
+      const candidates: WorksheetCandidate[] = lessons
+        .map((lesson) => ({
+          id: lesson.id,
+          title: lesson.title,
+          moeLevel: lesson.moe_level,
+          weekNumber: lesson.week_number,
+          words: extractWords(lesson.word_list),
+        }))
+        .filter((lesson) => lesson.words.length > 0);
+      resolvedLessonId = await identifyWorksheetLesson(imageBase64, mimeType, candidates);
+      const matched = candidates.find((lesson) => lesson.id === resolvedLessonId);
+      if (!matched) throw new Error("Matched worksheet lesson is no longer available.");
+      words = matched.words;
+      const { error: linkError } = await supabase
+        .from("submissions")
+        .update({ lesson_id: resolvedLessonId })
+        .eq("id", submission.id);
+      if (linkError) throw new Error(`Could not link worksheet to its lesson: ${linkError.message}`);
+    }
+    if (words.length === 0) throw new Error("This worksheet has no words to grade.");
 
     const results = await gradeWorksheet(imageBase64, mimeType, words);
     const correctCount = results.filter((r) => r.status === "correct").length;
@@ -105,6 +139,9 @@ export async function POST(request: Request) {
       .update({ status: "failed" })
       .eq("id", submission.id);
     const message = error instanceof Error ? error.message : "Grading failed.";
-    return NextResponse.json({ error: message }, { status: 502 });
+    return NextResponse.json(
+      { error: message },
+      { status: error instanceof WorksheetNotIdentifiedError ? 422 : 502 },
+    );
   }
 }
