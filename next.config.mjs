@@ -6,6 +6,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  outputFileTracingIncludes: {
+    "/api/worksheet": ["./public/fonts/NotoSansSC-VF.ttf"],
+  },
 }
 
 export default nextConfig
