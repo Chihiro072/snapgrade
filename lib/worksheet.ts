@@ -1,16 +1,12 @@
 import sharp from "sharp";
 import { PDFDocument } from "pdf-lib";
 import QRCode from "qrcode";
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 // Rendered at 150dpi, A4 proportions (8.27" x 11.69"), then scaled onto a
-// real A4-point PDF page. Vercel doesn't ship Chinese fonts, so embed the
-// bundled Noto Sans SC font inside the SVG before Sharp rasterizes it.
-const CJK_FONT_DATA = readFileSync(
-  join(process.cwd(), "public", "fonts", "NotoSansSC-VF.ttf"),
-).toString("base64");
-const CJK_FONT_FACE = `<style>@font-face{font-family:SnapGradeCJK;src:url(data:font/ttf;base64,${CJK_FONT_DATA}) format('truetype');}</style>`;
+// real A4-point PDF page. Vercel doesn't ship Chinese fonts, so point Sharp's
+// Fontconfig at the bundled Noto Sans SC font before it rasterizes SVG text.
+process.env.FONTCONFIG_FILE = join(process.cwd(), "fonts.conf");
 const DPI = 150;
 const PAGE_W = Math.round(8.27 * DPI);
 const PAGE_H = Math.round(11.69 * DPI);
@@ -41,7 +37,7 @@ function escapeXml(value: string) {
 
 function cellSvg(x: number, y: number, size: number, guideChar?: string) {
   const guide = guideChar
-    ? `<text x="${x + size / 2}" y="${y + size / 2 + size * 0.32}" font-size="${size * 0.72}" text-anchor="middle" font-family="SnapGradeCJK, sans-serif" fill="#c7c7c7">${escapeXml(guideChar)}</text>`
+    ? `<text x="${x + size / 2}" y="${y + size / 2 + size * 0.32}" font-size="${size * 0.72}" text-anchor="middle" font-family="Noto Sans SC, sans-serif" fill="#c7c7c7">${escapeXml(guideChar)}</text>`
     : "";
   return `
     <rect x="${x}" y="${y}" width="${size}" height="${size}" fill="white" stroke="#333" stroke-width="2"/>
@@ -70,7 +66,7 @@ function buildPageSvg(
     );
     y += 44;
     parts.push(
-      `<text x="${MARGIN}" y="${y + 30}" font-size="34" font-weight="bold" font-family="SnapGradeCJK, Arial, sans-serif" fill="#273b38">${escapeXml(lesson.title)}</text>`,
+      `<text x="${MARGIN}" y="${y + 30}" font-size="34" font-weight="bold" font-family="Noto Sans SC, Arial, sans-serif" fill="#273b38">${escapeXml(lesson.title)}</text>`,
     );
     y += 58;
     parts.push(
@@ -87,7 +83,7 @@ function buildPageSvg(
 
   for (const row of rows) {
     parts.push(
-      `<text x="${MARGIN}" y="${y + 6}" font-size="22" font-weight="bold" font-family="SnapGradeCJK, Arial, sans-serif" fill="#273b38">${escapeXml(row.word)}</text>`,
+      `<text x="${MARGIN}" y="${y + 6}" font-size="22" font-weight="bold" font-family="Noto Sans SC, Arial, sans-serif" fill="#273b38">${escapeXml(row.word)}</text>`,
     );
     y += 16;
     let x = MARGIN;
@@ -112,7 +108,7 @@ function buildPageSvg(
     `<text x="${PAGE_W - MARGIN}" y="${PAGE_H - 28}" font-size="14" font-family="Arial" text-anchor="end" fill="#999">Page ${pageIndex + 1} of ${pageCount} · Scan the completed sheet with SnapGrade to grade</text>`,
   );
 
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE_W}" height="${PAGE_H}">${CJK_FONT_FACE}<rect width="${PAGE_W}" height="${PAGE_H}" fill="white"/>${parts.join("\n")}</svg>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${PAGE_W}" height="${PAGE_H}"><rect width="${PAGE_W}" height="${PAGE_H}" fill="white"/>${parts.join("\n")}</svg>`;
 }
 
 function paginate(rows: Row[]): Row[][] {

@@ -7,7 +7,7 @@ const nextConfig = {
     unoptimized: true,
   },
   outputFileTracingIncludes: {
-    "/api/worksheet": ["./public/fonts/NotoSansSC-VF.ttf"],
+    "/api/worksheet": ["./public/fonts/NotoSansSC-VF.ttf", "./fonts.conf"],
   },
 }
 
