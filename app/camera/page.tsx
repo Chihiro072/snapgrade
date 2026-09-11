@@ -119,8 +119,7 @@ function CameraContent() {
       );
       if (!blob) throw new Error("Could not capture a frame from the camera.");
 
-      const qrLessonId = readWorksheetLessonId(canvas);
-      const resolvedLessonId = qrLessonId ?? lessonId;
+      const resolvedLessonId = readWorksheetLessonId(canvas);
       if (!resolvedLessonId) {
         throw new Error(
           "Worksheet code not found. Keep the full page, including the small code at top right, inside the frame.",

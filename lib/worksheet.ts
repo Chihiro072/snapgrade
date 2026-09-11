@@ -61,7 +61,7 @@ function buildPageSvg(
     const meta = `MOE ${lesson.moe_level} SYLLABUS${lesson.week_number ? ` · WEEK ${lesson.week_number}` : ""}`;
     parts.push(
       `<text x="${MARGIN}" y="${y + 18}" font-size="20" font-family="Arial" fill="#71847e">${escapeXml(meta)}</text>`,
-      `<image href="${qrCodeDataUrl}" x="${PAGE_W - MARGIN - 96}" y="${MARGIN - 20}" width="96" height="96"/>`,
+      `<image href="${qrCodeDataUrl}" x="${PAGE_W - MARGIN - 120}" y="${MARGIN - 24}" width="120" height="120"/>`,
     );
     y += 44;
     parts.push(

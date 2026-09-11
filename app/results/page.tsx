@@ -153,6 +153,7 @@ function ResultsContent() {
       let historyQuery = supabase
         .from("submissions")
         .select("id, submitted_at")
+        .eq("status", "graded")
         .order("submitted_at", { ascending: false })
         .limit(3);
       if (target.lesson_id) historyQuery = historyQuery.eq("lesson_id", target.lesson_id);
@@ -178,8 +179,17 @@ function ResultsContent() {
       const words = targetResults.map((r) => r.character_name);
       const statusByKey = new Map<string, "correct" | "incorrect">();
       for (const r of results) statusByKey.set(`${r.submission_id}:${r.character_name}`, r.status);
+      const targetWords = new Set(words);
+      // Older fallback scans may use a different word list. Keep them in
+      // History, but not in this lesson's comparison table as an empty column.
+      const comparableColumns = columns.filter((column) =>
+        results.some(
+          (result) =>
+            result.submission_id === column.id && targetWords.has(result.character_name),
+        ),
+      );
       if (live) {
-        setData({ target: target!, columns, words, statusByKey });
+        setData({ target: target!, columns: comparableColumns, words, statusByKey });
         setLoading(false);
       }
     }
