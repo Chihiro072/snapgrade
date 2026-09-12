@@ -1,6 +1,7 @@
 "use client";
 
 import { X, Zap } from "lucide-react";
+import jsQR from "jsqr";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -13,6 +14,24 @@ const STAGE_LABEL: Record<Stage, string> = {
   uploading: "Uploading worksheet…",
   grading: "Grading handwriting…",
 };
+
+const LESSON_QR_PREFIX = "snapgrade:lesson:";
+// Safe fallback for a photo where the printed QR is out of frame, blurred, or
+// from an older worksheet. This is the dashboard's default P2 lesson.
+const DEFAULT_LESSON_ID = "a0000000-0000-4000-8000-000000000004";
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function readWorksheetLessonId(canvas: HTMLCanvasElement): string | null {
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  if (!context) return null;
+  const image = context.getImageData(0, 0, canvas.width, canvas.height);
+  const payload = jsQR(image.data, image.width, image.height, {
+    inversionAttempts: "attemptBoth",
+  })?.data;
+  if (!payload?.startsWith(LESSON_QR_PREFIX)) return null;
+  const id = payload.slice(LESSON_QR_PREFIX.length);
+  return UUID_PATTERN.test(id) ? id : null;
+}
 
 function CameraContent() {
   const router = useRouter();
@@ -87,12 +106,11 @@ function CameraContent() {
       );
       if (!blob) throw new Error("Could not capture a frame from the camera.");
 
-      const resolvedLessonId = lessonId ?? window.localStorage.getItem("snapgrade:lastLessonId");
-      if (!resolvedLessonId) {
-        throw new Error(
-          "Select and print a worksheet from Syllabus before scanning it.",
-        );
-      }
+      const resolvedLessonId =
+        readWorksheetLessonId(canvas) ??
+        lessonId ??
+        window.localStorage.getItem("snapgrade:lastLessonId") ??
+        DEFAULT_LESSON_ID;
 
       const file = new File([blob], `worksheet-${Date.now()}.jpg`, {
         type: "image/jpeg",
@@ -167,6 +185,9 @@ function CameraContent() {
         <i className="absolute right-0 top-0 size-9 border-r-4 border-t-4" />
         <i className="absolute bottom-0 left-0 size-9 border-b-4 border-l-4" />
         <i className="absolute bottom-0 right-0 size-9 border-b-4 border-r-4" />
+        <div className="absolute right-4 top-4 grid size-16 place-items-center rounded border-2 border-dashed border-white/80 text-[7px]">
+          QR target
+        </div>
         <p className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-black/55 px-3 py-2 text-xs">
           Keep page flat and inside the brackets
         </p>

@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import { PDFDocument } from "pdf-lib";
+import QRCode from "qrcode";
 import { join } from "node:path";
 
 // Rendered at 150dpi, A4 proportions (8.27" x 11.69"), then scaled onto a
@@ -20,6 +21,7 @@ const ROWS_FIRST_PAGE = 10;
 const ROWS_OTHER_PAGES = 11;
 
 export type WorksheetLesson = {
+  id: string;
   title: string;
   moe_level: string;
   week_number: number | null;
@@ -51,6 +53,7 @@ function buildPageSvg(
   rows: Row[],
   pageIndex: number,
   pageCount: number,
+  qrCodeDataUrl: string,
 ) {
   const parts: string[] = [];
   let y = MARGIN;
@@ -59,6 +62,7 @@ function buildPageSvg(
     const meta = `MOE ${lesson.moe_level} SYLLABUS${lesson.week_number ? ` · WEEK ${lesson.week_number}` : ""}`;
     parts.push(
       `<text x="${MARGIN}" y="${y + 18}" font-size="20" font-family="Arial" fill="#71847e">${escapeXml(meta)}</text>`,
+      `<image href="${qrCodeDataUrl}" x="${PAGE_W - MARGIN - 120}" y="${MARGIN - 24}" width="120" height="120"/>`,
     );
     y += 44;
     parts.push(
@@ -133,9 +137,14 @@ export async function renderWorksheetPdf(
 
   const pages = paginate(rows);
   const pdfDoc = await PDFDocument.create();
+  const qrCodeDataUrl = await QRCode.toDataURL(`snapgrade:lesson:${lesson.id}`, {
+    errorCorrectionLevel: "H",
+    margin: 1,
+    width: 240,
+  });
 
   for (let p = 0; p < pages.length; p++) {
-    const svg = buildPageSvg(lesson, pages[p], p, pages.length);
+    const svg = buildPageSvg(lesson, pages[p], p, pages.length, qrCodeDataUrl);
     const png = await sharp(Buffer.from(svg)).png().toBuffer();
     const image = await pdfDoc.embedPng(png);
     const page = pdfDoc.addPage([A4_POINTS_W, A4_POINTS_H]);
