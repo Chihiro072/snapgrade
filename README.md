@@ -1,51 +1,119 @@
-# snapgrade
+# SnapGrade
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [v0](https://v0.app).
+**An AI-powered Chinese handwriting practice PWA for young learners.**
 
-## Built with v0
+SnapGrade turns a printed Chinese spelling worksheet into a simple mobile feedback loop. A learner chooses an MOE lesson, prints a Tian Zige worksheet, captures it with their phone, and receives a score, red-pen corrections, and a history of past attempts.
 
-This repository is linked to a [v0](https://v0.app) project. You can continue developing by visiting the link below -- start new chats to make changes, and v0 will push commits directly to this repo. Every merge to `main` will automatically deploy.
+## Live demo
 
-[Continue working on v0 →](https://v0.app/chat/projects/prj_B6JTVeSGEcrUFye1Mm6ejdwgNiE5)
+**[Open SnapGrade on Vercel →](https://snapgrade-gamma.vercel.app/)**
 
-## Getting Started
+> For the complete scan flow, create an account, generate a fresh worksheet from Syllabus, then scan its QR code using a mobile device.
 
-First, run the development server:
+## What this project solves
+
+Chinese spelling practice often relies on a parent or teacher manually checking a physical worksheet. SnapGrade demonstrates a faster feedback loop for that process:
+
+`Choose lesson → print worksheet → capture photo → grade on backend → red-pen feedback → track improvement`
+
+The assignment prioritises this working end-to-end flow over perfect handwriting recognition accuracy.
+
+## Key features
+
+### QR-linked worksheets
+
+Every newly generated worksheet includes a QR code identifying its exact MOE lesson. This means the app knows the correct expected vocabulary before grading; it does not need to guess a course from handwriting.
+
+### Mobile camera capture built for worksheets
+
+- Uses the device rear camera through `getUserMedia`.
+- Alignment brackets, QR target and torch control guide the learner.
+- Tapping the shutter freezes and saves the frame immediately.
+- The camera is released straight away and replaced with a loading state, so the learner does not need to keep holding the phone.
+
+### Complete backend grading pipeline
+
+1. The captured image is uploaded to private Supabase Storage via `POST /api/upload`.
+2. A pending submission record is created in PostgreSQL.
+3. `POST /api/grade` downloads the image, sends it and the lesson word list to a vision model, calculates the score, and writes individual results to `character_results`.
+4. The frontend reads the stored results and overlays missed words in red pen on the submitted worksheet.
+
+### Results and progress history
+
+- Live score header with date, completion status and missed-word count.
+- Red handwritten correction overlay on the captured worksheet.
+- Historical results matrix: vocabulary rows and attempt-date columns.
+- Horizontally scrollable on mobile, so every past attempt remains readable.
+- Native Share Report action on supported phones, with clipboard fallback elsewhere.
+
+### MOE lesson experience
+
+- P1–P6 level selector; all levels are accessible for practice.
+- Lesson vocabulary, printable revision sheets and student-specific completion status.
+- Lucas / Primary 2 dashboard, prepaid credits and weekly practice view, matching the supplied mobile design direction.
+
+### PWA and authentication
+
+- Installable PWA manifest, SnapGrade icon and mobile viewport configuration.
+- Supabase email authentication.
+- Dashboard, Syllabus, History, Camera and Results routes redirect unauthenticated visitors to Login.
+
+## AI models
+
+The brief names Gemini 1.5 Flash. That model is no longer available through the configured Gemini API, so this project uses a current supported Flash model and a second provider as resilience fallback.
+
+| Role | Model | Use |
+| --- | --- | --- |
+| Primary grader | Google Gemini `gemini-3.6-flash` | Default worksheet vision grading. |
+| Fallback grader | OpenRouter `google/gemma-4-26b-a4b-it:free` | Used if Gemini is temporarily unavailable or quota-limited. |
+
+Both models receive the photo and strict expected-word prompt, then return JSON correct/incorrect results. Free provider capacity may be rate-limited; both API keys should be configured for the best demonstration experience.
+
+## Technology
+
+- Next.js 16, React 19, TypeScript and Tailwind CSS
+- Supabase Auth, PostgreSQL, Storage and Row Level Security
+- Google Gemini and OpenRouter vision APIs
+- `qrcode` and `jsQR` for worksheet identification
+- `sharp` and `pdf-lib` for Chinese A4 worksheet PDFs
+- Vercel deployment
+
+## Local setup
+
+Requirements: Node.js 20.9+ and a Supabase project.
 
 ```bash
+npm install
+copy .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Configure `.env.local`:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+GEMINI_API_KEY=
+OPENROUTER_API_KEY=
+```
 
-## Deploy to Vercel
+Keep `GEMINI_API_KEY` and `OPENROUTER_API_KEY` server-side only. Never expose them with a `NEXT_PUBLIC_` prefix.
 
-1. Push this repository to GitHub, then import it in [Vercel](https://vercel.com/new).
-2. Leave the framework preset as **Next.js** and use the default build command (`npm run build`).
-3. In **Project Settings → Environment Variables**, add these values for Production, Preview, and Development:
+## Supabase and Vercel deployment
 
-   ```text
-   NEXT_PUBLIC_SUPABASE_URL
-   NEXT_PUBLIC_SUPABASE_ANON_KEY
-   GEMINI_API_KEY
-   OPENROUTER_API_KEY
-   ```
+1. Run [`supabase/migrations/schema.sql`](supabase/migrations/schema.sql) in Supabase SQL Editor. It creates the lesson, submission and result tables, private `worksheets` bucket and access policies.
+2. Enable Email auth and add local/Vercel URLs to Supabase Auth redirect URLs.
+3. Import the repository into Vercel with the Next.js preset.
+4. Add the four environment variables above for Production, Preview and Development.
+5. Add the deployed Vercel URL to Supabase Auth Site URL and redirect URLs.
 
-   `GEMINI_API_KEY` and `OPENROUTER_API_KEY` are server-only secrets. Do not prefix either with `NEXT_PUBLIC_`.
-4. In Supabase Auth, add your Vercel URL (and later any custom domain) to the allowed redirect URLs/site URL. Keep the existing localhost URL for local development.
+The worksheet endpoint includes a bundled Chinese font for Vercel PDF generation and allows up to 60 seconds for image/PDF operations.
 
-The worksheet endpoint uses the Node.js runtime and `sharp` is a direct production dependency, so Vercel installs the native image binary required to generate PDFs. Grading and worksheet functions allow up to 60 seconds to complete.
+## Verification
 
-## Learn More
+```bash
+npm run build
+npx tsc --noEmit
+```
 
-To learn more, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-- [v0 Documentation](https://v0.app/docs) - learn about v0 and how to use it.
+Both checks pass before deployment.
