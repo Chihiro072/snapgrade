@@ -7,12 +7,13 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useGrade } from "@/lib/grade-context";
 
-type Stage = "idle" | "uploading" | "grading";
+type Stage = "idle" | "uploading" | "grading" | "failed";
 
 const STAGE_LABEL: Record<Stage, string> = {
   idle: "Capture & Grade",
   uploading: "Uploading worksheet…",
   grading: "Grading handwriting…",
+  failed: "Try again",
 };
 
 const LESSON_QR_PREFIX = "snapgrade:lesson:";
@@ -172,25 +173,32 @@ function CameraContent() {
       router.push(`/results?submissionId=${uploadBody.submission.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
-      setStage("idle");
+      setStage("failed");
     }
   }
   if (stage !== "idle") {
+    const failed = stage === "failed";
     return (
       <main className="grid min-h-screen place-items-center bg-[#f7f4ee] px-8 text-[#273b38]">
         <section className="w-full max-w-xs text-center">
           <div className="mx-auto grid size-20 place-items-center rounded-full bg-[#e4f0eb]">
-            <span className="size-9 animate-spin rounded-full border-4 border-[#2f7168]/25 border-t-[#2f7168]" />
+            {failed ? <X size={30} className="text-[#d36b60]" /> : <span className="size-9 animate-spin rounded-full border-4 border-[#2f7168]/25 border-t-[#2f7168]" />}
           </div>
           <h1 className="mt-7 text-xl font-bold">
-            {stage === "uploading" ? "Saving your worksheet" : "Checking your handwriting"}
+            {failed ? "Could not grade worksheet" : stage === "uploading" ? "Saving your worksheet" : "Checking your handwriting"}
           </h1>
           <p className="mt-2 text-sm leading-6 text-[#71847e]">
-            Your photo is saved. You can put your phone down now.
+            {failed ? error : "Your photo is saved. You can put your phone down now."}
           </p>
-          <div className="mt-8 h-2 overflow-hidden rounded-full bg-[#dfe9e4]">
-            <span className="block h-full w-2/3 animate-pulse rounded-full bg-[#2f7168]" />
-          </div>
+          {failed ? (
+            <button onClick={() => window.location.reload()} className="mt-8 w-full rounded-full bg-[#2f7168] py-3 text-sm font-bold text-white">
+              Try camera again
+            </button>
+          ) : (
+            <div className="mt-8 h-2 overflow-hidden rounded-full bg-[#dfe9e4]">
+              <span className="block h-full w-2/3 animate-pulse rounded-full bg-[#2f7168]" />
+            </div>
+          )}
         </section>
       </main>
     );
