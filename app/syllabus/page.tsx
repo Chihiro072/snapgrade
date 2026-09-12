@@ -163,7 +163,7 @@ export default function SyllabusPage() {
             <button
               key={l}
               onClick={() => setLevel(l)}
-              className={`flex h-10 w-[68px] items-center justify-center gap-1 rounded-full border text-base shadow-[0_2px_7px_#31584b14] ${
+              className={`flex h-9 w-[68px] items-center justify-center gap-1 rounded-full border text-sm shadow-[0_2px_7px_#31584b14] ${
                 l === level
                   ? "!border-[#2f7168] !bg-[#2f7168] font-bold !text-white"
                   : "!border-[#e1ebe6] !bg-white font-semibold text-[#506762]"
