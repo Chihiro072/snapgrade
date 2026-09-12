@@ -9,9 +9,7 @@ const benefits = [
 export default function PremiumPage() {
   return (
     <AppShell>
-      <p className="text-[10px] tracking-wide text-[#90a19c]">TING XIE PLUS</p>
-      <h1 className="mt-1 text-2xl">Practice with more support</h1>
-      <section className="mt-6 rounded-2xl bg-white p-5">
+      <section className="rounded-2xl bg-white p-5">
         {benefits.map((x) => (
           <p key={x} className="my-4 flex gap-2">
             <Check size={18} />
