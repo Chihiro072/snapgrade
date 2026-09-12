@@ -116,8 +116,7 @@ function ResultsContent() {
       } = await supabase.auth.getSession();
       if (!session) {
         if (live) {
-          setError("Please log in to view results.");
-          setLoading(false);
+          router.replace("/login");
         }
         return;
       }

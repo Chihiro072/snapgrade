@@ -58,8 +58,16 @@ function CameraContent() {
   const [stage, setStage] = useState<Stage>("idle");
   useEffect(() => {
     let live = true;
-    navigator.mediaDevices
-      ?.getUserMedia({
+    async function startCamera() {
+      const {
+        data: { session },
+      } = await getSupabaseClient().auth.getSession();
+      if (!live || !session) {
+        if (live) router.replace("/login");
+        return;
+      }
+      navigator.mediaDevices
+        ?.getUserMedia({
         video: {
           facingMode: { ideal: "environment" },
           width: { ideal: 1920 },
@@ -67,17 +75,19 @@ function CameraContent() {
         },
         audio: false,
       })
-      .then((stream) => {
-        if (!live) return stream.getTracks().forEach((track) => track.stop());
-        streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
-      })
-      .catch(() => setError("Camera access is needed to scan a worksheet."));
+        .then((stream) => {
+          if (!live) return stream.getTracks().forEach((track) => track.stop());
+          streamRef.current = stream;
+          if (videoRef.current) videoRef.current.srcObject = stream;
+        })
+        .catch(() => setError("Camera access is needed to scan a worksheet."));
+    }
+    startCamera();
     return () => {
       live = false;
       streamRef.current?.getTracks().forEach((track) => track.stop());
     };
-  }, []);
+  }, [router]);
   async function toggleFlash() {
     const track = streamRef.current?.getVideoTracks()[0];
     if (!track) return;
