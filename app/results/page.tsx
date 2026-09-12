@@ -76,7 +76,7 @@ type ResultsData = {
   columns: Column[];
   words: string[];
   statusByKey: Map<string, "correct" | "incorrect">;
-  corrections: Array<{ character: string; x: number; y: number }>;
+  corrections: Array<{ character: string; x: number; y: number; estimated: boolean }>;
   imageUrl: string | null;
 };
 
@@ -184,16 +184,20 @@ function ResultsContent() {
       const words = targetResults.map((r) => r.character_name);
       const statusByKey = new Map<string, "correct" | "incorrect">();
       for (const r of results) statusByKey.set(`${r.submission_id}:${r.character_name}`, r.status);
-      const corrections = targetResults
-        .filter(
-          (result): result is CharacterResult & { box_x: number; box_y: number } =>
-            result.status === "incorrect" && result.box_x != null && result.box_y != null,
-        )
-        .map((result) => ({
+      const missedResults = targetResults.filter((result) => result.status === "incorrect");
+      // Vision models can correctly identify a missed word but occasionally
+      // omit its grid coordinates. The correction flow must still be visible:
+      // use model coordinates when supplied, otherwise stack a red-pen
+      // correction in a predictable part of the captured worksheet.
+      const corrections = missedResults.map((result, index) => {
+        const hasPosition = result.box_x != null && result.box_y != null;
+        return {
           character: result.character_name,
-          x: result.box_x,
-          y: result.box_y,
-        }));
+          x: hasPosition ? result.box_x! : 0.5,
+          y: hasPosition ? result.box_y! : 0.22 + (index / Math.max(missedResults.length, 1)) * 0.56,
+          estimated: !hasPosition,
+        };
+      });
       let imageUrl: string | null = null;
       if (target.image_path) {
         const { data: signed } = await supabase.storage
@@ -344,16 +348,11 @@ function ResultsContent() {
                         transform: "rotate(-4deg)",
                       }}
                     >
-                      {mark.character}
+                      {mark.estimated ? `Correct: ${mark.character}` : mark.character}
                     </span>
                   </div>
                 ))}
             </section>
-            {target.status === "graded" && corrections.length === 0 && missedCount > 0 && (
-              <p className="mt-1 text-[10px] text-[#90a19c]">
-                Positions for missed characters were not available for this scan.
-              </p>
-            )}
           </>
         )}
         <h2 className="mt-5 text-sm font-bold">Results over time</h2>
