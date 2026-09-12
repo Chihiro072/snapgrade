@@ -72,7 +72,7 @@ export function AppShell({
         <button
           onClick={() => router.push("/")}
           aria-label="Go to dashboard"
-          className="hidden h-9 w-[138px] items-center overflow-hidden md:flex"
+          className="hidden h-9 w-[170px] items-center md:flex"
         >
           <span className="relative block h-8 w-full overflow-hidden">
             <Image

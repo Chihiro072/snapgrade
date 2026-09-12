@@ -45,7 +45,10 @@ export default function RegisterPage() {
         onSubmit={register}
         className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm"
       >
-        <p className="text-sm font-bold text-[#2f7168]">TING XIE</p>
+        <div className="flex items-center gap-2 text-sm font-bold text-[#2f7168]">
+          <img src="/logo-notext.png" alt="SnapGrade" className="size-7 rounded-md" />
+          <span>SNAPGRADE</span>
+        </div>
         <h1 className="mt-2 text-2xl">Create account</h1>
         <label className="mt-6 block text-sm font-semibold">
           Your name
