@@ -36,14 +36,18 @@ export function AppShell({
   const pathname = usePathname();
   const router = useRouter();
   const [name, setName] = useState("Learner");
+  const [authReady, setAuthReady] = useState(false);
   const { grade } = useGrade();
 
   useEffect(() => {
     getSupabaseClient()
-      .auth.getUser()
+      .auth.getSession()
       .then(({ data }) => {
-        const user = data.user;
-        if (!user) return;
+        const user = data.session?.user;
+        if (!user) {
+          router.replace("/login");
+          return;
+        }
         setName(
           String(
             user.user_metadata.full_name ||
@@ -52,14 +56,19 @@ export function AppShell({
           ),
         );
       })
-      .catch(() => undefined);
-  }, []);
+      .catch(() => router.replace("/login"))
+      .finally(() => setAuthReady(true));
+  }, [router]);
   async function logout() {
     try {
       await getSupabaseClient().auth.signOut();
     } finally {
       router.push("/login");
     }
+  }
+
+  if (!authReady) {
+    return <main className="min-h-screen bg-[#f7f3ec]" aria-label="Checking sign in" />;
   }
 
   return (
