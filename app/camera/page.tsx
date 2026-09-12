@@ -20,17 +20,30 @@ const LESSON_QR_PREFIX = "snapgrade:lesson:";
 // from an older worksheet. This is the dashboard's default P2 lesson.
 const DEFAULT_LESSON_ID = "a0000000-0000-4000-8000-000000000004";
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+type QrAnchor = { x: number; y: number; width: number; height: number };
+type WorksheetQr = { lessonId: string; anchor: QrAnchor };
 
-function readWorksheetLessonId(canvas: HTMLCanvasElement): string | null {
+function readWorksheetQr(canvas: HTMLCanvasElement): WorksheetQr | null {
   const context = canvas.getContext("2d", { willReadFrequently: true });
   if (!context) return null;
   const image = context.getImageData(0, 0, canvas.width, canvas.height);
-  const payload = jsQR(image.data, image.width, image.height, {
+  const code = jsQR(image.data, image.width, image.height, {
     inversionAttempts: "attemptBoth",
-  })?.data;
+  });
+  const payload = code?.data;
   if (!payload?.startsWith(LESSON_QR_PREFIX)) return null;
   const id = payload.slice(LESSON_QR_PREFIX.length);
-  return UUID_PATTERN.test(id) ? id : null;
+  if (!UUID_PATTERN.test(id) || !code) return null;
+  const { topLeftCorner, topRightCorner, bottomLeftCorner, bottomRightCorner } = code.location;
+  return {
+    lessonId: id,
+    anchor: {
+      x: (topLeftCorner.x + bottomRightCorner.x) / 2 / canvas.width,
+      y: (topLeftCorner.y + bottomRightCorner.y) / 2 / canvas.height,
+      width: Math.hypot(topRightCorner.x - topLeftCorner.x, topRightCorner.y - topLeftCorner.y) / canvas.width,
+      height: Math.hypot(bottomLeftCorner.x - topLeftCorner.x, bottomLeftCorner.y - topLeftCorner.y) / canvas.height,
+    },
+  };
 }
 
 function CameraContent() {
@@ -101,13 +114,18 @@ function CameraContent() {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       canvas.getContext("2d")?.drawImage(video, 0, 0);
+      // The frame is already frozen in canvas. Release the physical camera
+      // immediately so the student can put the phone down during upload/AI.
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
       const blob = await new Promise<Blob | null>((resolve) =>
         canvas.toBlob(resolve, "image/jpeg", 0.94),
       );
       if (!blob) throw new Error("Could not capture a frame from the camera.");
 
+      const worksheetQr = readWorksheetQr(canvas);
       const resolvedLessonId =
-        readWorksheetLessonId(canvas) ??
+        worksheetQr?.lessonId ??
         lessonId ??
         window.localStorage.getItem("snapgrade:lastLessonId") ??
         DEFAULT_LESSON_ID;
@@ -135,7 +153,7 @@ function CameraContent() {
           Authorization: `Bearer ${session.access_token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ submissionId: uploadBody.submission.id }),
+        body: JSON.stringify({ submissionId: uploadBody.submission.id, qrAnchor: worksheetQr?.anchor }),
       });
       const gradeBody = await gradeRes.json();
       if (!gradeRes.ok) throw new Error(gradeBody.error ?? "Grading failed.");

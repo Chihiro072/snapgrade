@@ -76,7 +76,7 @@ type ResultsData = {
   columns: Column[];
   words: string[];
   statusByKey: Map<string, "correct" | "incorrect">;
-  corrections: string[];
+  corrections: Array<{ character: string; x: number; y: number }>;
   imageUrl: string | null;
 };
 
@@ -183,12 +183,12 @@ function ResultsContent() {
       const words = targetResults.map((r) => r.character_name);
       const statusByKey = new Map<string, "correct" | "incorrect">();
       for (const r of results) statusByKey.set(`${r.submission_id}:${r.character_name}`, r.status);
-      // Phone shots may include desk/laptop and perspective distortion. Do
-      // not fabricate a grid-cell position. Show returned corrections as one
-      // intentional red-pen overlay panel on the submitted image instead.
       const corrections = targetResults
-        .filter((result) => result.status === "incorrect")
-        .map((result) => result.character_name);
+        .filter(
+          (result): result is CharacterResult & { box_x: number; box_y: number } =>
+            result.status === "incorrect" && result.box_x != null && result.box_y != null,
+        )
+        .map((result) => ({ character: result.character_name, x: result.box_x, y: result.box_y }));
       let imageUrl: string | null = null;
       if (target.image_path) {
         const { data: signed } = await supabase.storage
@@ -316,27 +316,28 @@ function ResultsContent() {
             <h2 className="mt-5 text-sm font-bold">Corrected Worksheet</h2>
             <section className="relative mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
               <img src={imageUrl} alt="Captured worksheet" className="block w-full" />
-              {target.status === "graded" && corrections.length > 0 && (
-                <aside className="pointer-events-none absolute right-3 top-3 max-w-[60%] rounded-lg border-2 border-[#e0362c]/70 bg-white/90 px-3 py-2 shadow-sm">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#b92d26]">
-                    Red-pen corrections
-                  </p>
-                  <p
-                    className="mt-1 text-base font-bold leading-snug text-[#e0362c]"
-                    style={{ fontFamily: '"Segoe Print","Bradley Hand","Comic Sans MS",cursive' }}
-                  >
-                    {corrections.join(" · ")}
-                  </p>
-                </aside>
-              )}
+              {target.status === "graded" && corrections.map((mark, index) => (
+                <span
+                  key={`${mark.character}-${index}`}
+                  className="pointer-events-none absolute rounded bg-white/85 px-1.5 text-lg font-bold text-[#df3128] shadow-sm"
+                  style={{
+                    left: `${mark.x * 100}%`,
+                    top: `${mark.y * 100}%`,
+                    fontFamily: '"Segoe Print","Bradley Hand","Comic Sans MS",cursive',
+                    transform: "translate(-50%, -50%) rotate(-5deg)",
+                  }}
+                >
+                  {mark.character}
+                </span>
+              ))}
             </section>
           </>
         )}
         <h2 className="mt-5 text-sm font-bold">Results over time</h2>
-        <section className="mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
+        <section className="mt-2 overflow-x-auto rounded-xl border border-[#d6e4de] bg-white">
           <div
-            className="grid bg-[#eaf3ef] text-[10px]"
-            style={{ gridTemplateColumns: `1.45fr repeat(${columns.length}, minmax(0, 1fr))` }}
+            className="grid min-w-max bg-[#eaf3ef] text-[10px]"
+            style={{ gridTemplateColumns: `145px repeat(${columns.length}, 82px)` }}
           >
             <span className="p-3">Character</span>
             {columns.map((col, i) => (
@@ -353,8 +354,8 @@ function ResultsContent() {
             words.map((word, index) => (
               <div
                 key={word}
-                className={`grid min-h-12 border-t ${index % 2 ? "bg-[#fbf7f0]" : "bg-white"}`}
-                style={{ gridTemplateColumns: `1.45fr repeat(${columns.length}, minmax(0, 1fr))` }}
+                className={`grid min-w-max min-h-12 border-t ${index % 2 ? "bg-[#fbf7f0]" : "bg-white"}`}
+                style={{ gridTemplateColumns: `145px repeat(${columns.length}, 82px)` }}
               >
                 <span className="flex flex-col justify-center px-5 py-2">
                   <strong className="block text-lg font-extrabold">{word}</strong>
