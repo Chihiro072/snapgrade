@@ -76,7 +76,7 @@ type ResultsData = {
   columns: Column[];
   words: string[];
   statusByKey: Map<string, "correct" | "incorrect">;
-  corrections: Array<{ character: string; x: number; y: number; estimated: boolean }>;
+  corrections: string[];
   imageUrl: string | null;
 };
 
@@ -159,18 +159,17 @@ function ResultsContent() {
         .from("submissions")
         .select("id, submitted_at")
         .eq("status", "graded")
-        .order("submitted_at", { ascending: false })
-        .limit(3);
+        .order("submitted_at", { ascending: false });
       if (target.lesson_id) historyQuery = historyQuery.eq("lesson_id", target.lesson_id);
       const { data: historyRaw } = await historyQuery;
-      // Render only real attempts. First scan: one column. Later attempts:
-      // append columns, retaining the three most recent.
+      // Render every real attempt. First scan: one column; later scans add
+      // another date column.
       const uniqueHistory = new Map<string, Column>();
       for (const entry of historyRaw ?? []) uniqueHistory.set(entry.id, entry);
       uniqueHistory.set(target.id, { id: target.id, submitted_at: target.submitted_at });
-      const columns = [...uniqueHistory.values()]
-        .sort((a, b) => a.submitted_at.localeCompare(b.submitted_at))
-        .slice(-3);
+      const columns = [...uniqueHistory.values()].sort(
+        (a, b) => a.submitted_at.localeCompare(b.submitted_at),
+      );
 
       const ids = columns.map((column) => column.id);
       const { data: resultsRaw } = await supabase
@@ -184,20 +183,12 @@ function ResultsContent() {
       const words = targetResults.map((r) => r.character_name);
       const statusByKey = new Map<string, "correct" | "incorrect">();
       for (const r of results) statusByKey.set(`${r.submission_id}:${r.character_name}`, r.status);
-      const missedResults = targetResults.filter((result) => result.status === "incorrect");
-      // Vision models can correctly identify a missed word but occasionally
-      // omit its grid coordinates. The correction flow must still be visible:
-      // use model coordinates when supplied, otherwise stack a red-pen
-      // correction in a predictable part of the captured worksheet.
-      const corrections = missedResults.map((result, index) => {
-        const hasPosition = result.box_x != null && result.box_y != null;
-        return {
-          character: result.character_name,
-          x: hasPosition ? result.box_x! : 0.5,
-          y: hasPosition ? result.box_y! : 0.22 + (index / Math.max(missedResults.length, 1)) * 0.56,
-          estimated: !hasPosition,
-        };
-      });
+      // Phone shots may include desk/laptop and perspective distortion. Do
+      // not fabricate a grid-cell position. Show returned corrections as one
+      // intentional red-pen overlay panel on the submitted image instead.
+      const corrections = targetResults
+        .filter((result) => result.status === "incorrect")
+        .map((result) => result.character_name);
       let imageUrl: string | null = null;
       if (target.image_path) {
         const { data: signed } = await supabase.storage
@@ -325,33 +316,19 @@ function ResultsContent() {
             <h2 className="mt-5 text-sm font-bold">Corrected Worksheet</h2>
             <section className="relative mt-2 overflow-hidden rounded-xl border border-[#d6e4de] bg-white">
               <img src={imageUrl} alt="Captured worksheet" className="block w-full" />
-              {target.status === "graded" &&
-                corrections.map((mark, index) => (
-                  <div
-                    key={`${mark.character}-${index}`}
-                    className="pointer-events-none absolute"
-                    style={{
-                      left: `${mark.x * 100}%`,
-                      top: `${mark.y * 100}%`,
-                      transform: "translate(-50%, -50%)",
-                    }}
+              {target.status === "graded" && corrections.length > 0 && (
+                <aside className="pointer-events-none absolute right-3 top-3 max-w-[60%] rounded-lg border-2 border-[#e0362c]/70 bg-white/90 px-3 py-2 shadow-sm">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-[#b92d26]">
+                    Red-pen corrections
+                  </p>
+                  <p
+                    className="mt-1 text-base font-bold leading-snug text-[#e0362c]"
+                    style={{ fontFamily: '"Segoe Print","Bradley Hand","Comic Sans MS",cursive' }}
                   >
-                    <span
-                      className="absolute left-1/2 top-1/2 block size-16 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-[#e0362c]/80"
-                      style={{ transform: "translate(-50%, -50%) rotate(-6deg)" }}
-                    />
-                    <span
-                      className="absolute left-1/2 top-full -translate-x-1/2 whitespace-nowrap rounded bg-white/90 px-1 text-base font-bold text-[#e0362c]"
-                      style={{
-                        fontFamily:
-                          '"Segoe Print","Bradley Hand","Comic Sans MS",cursive',
-                        transform: "rotate(-4deg)",
-                      }}
-                    >
-                      {mark.estimated ? `Correct: ${mark.character}` : mark.character}
-                    </span>
-                  </div>
-                ))}
+                    {corrections.join(" · ")}
+                  </p>
+                </aside>
+              )}
             </section>
           </>
         )}
