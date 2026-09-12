@@ -103,6 +103,7 @@ function ResultsContent() {
   const [data, setData] = useState<ResultsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [shareMessage, setShareMessage] = useState("");
 
   useEffect(() => {
     let live = true;
@@ -274,6 +275,29 @@ function ResultsContent() {
   const circleColor = target.status === "failed" || !isGood ? "#d86962" : "#2f7168";
   const circleBg = target.status === "failed" || !isGood ? "#fff4f2" : "#eaf5f1";
 
+  async function shareReport() {
+    const title = target.lessons?.title ?? "SnapGrade practice report";
+    const text =
+      target.status === "graded"
+        ? `${title}: ${correctCount}/${words.length} correct (${Math.round(percent)}%).`
+        : `${title}: grading report.`;
+    const shareData = { title: "SnapGrade Report", text, url: window.location.href };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+        setShareMessage("Report shared");
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${shareData.url}`);
+        setShareMessage("Report link copied");
+      }
+    } catch (shareError) {
+      // Closing the native share sheet is not an error worth showing.
+      if (!(shareError instanceof DOMException && shareError.name === "AbortError")) {
+        setShareMessage("Could not share report");
+      }
+    }
+  }
+
   return (
     <AppShell showBottomNav={false} desktopNavOnly unpadded>
       <main className="mx-auto min-h-screen max-w-[430px] bg-[#f7f3ec] px-4 pb-28 pt-6 text-[#273b38] md:max-w-2xl md:px-10 md:pb-10 md:pt-12">
@@ -387,7 +411,10 @@ function ResultsContent() {
           )}
         </section>
         <div className="fixed bottom-0 left-1/2 flex w-full max-w-[430px] -translate-x-1/2 gap-2 border-t border-[#e5eeea] bg-white p-4 md:static md:mt-4 md:max-w-none md:translate-x-0 md:justify-end md:border-0 md:bg-transparent md:p-0">
-          <button className="flex-1 rounded-full !bg-[#e7f1ed] py-3 !text-[#2f7168] md:max-w-40">
+          <button
+            onClick={shareReport}
+            className="flex-1 rounded-full !bg-[#e7f1ed] py-3 !text-[#2f7168] md:max-w-40"
+          >
             <Share2 className="inline" size={15} /> Share Report
           </button>
           <button
@@ -397,6 +424,11 @@ function ResultsContent() {
             <RotateCcw className="inline" size={15} /> Retest Missed
           </button>
         </div>
+        {shareMessage && (
+          <p className="fixed bottom-24 left-1/2 z-20 -translate-x-1/2 rounded-full bg-[#273b38] px-4 py-2 text-xs text-white shadow-lg">
+            {shareMessage}
+          </p>
+        )}
       </main>
     </AppShell>
   );
