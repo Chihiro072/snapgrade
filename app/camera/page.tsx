@@ -165,6 +165,26 @@ function CameraContent() {
       setStage("idle");
     }
   }
+  if (stage !== "idle") {
+    return (
+      <main className="grid min-h-screen place-items-center bg-[#f7f4ee] px-8 text-[#273b38]">
+        <section className="w-full max-w-xs text-center">
+          <div className="mx-auto grid size-20 place-items-center rounded-full bg-[#e4f0eb]">
+            <span className="size-9 animate-spin rounded-full border-4 border-[#2f7168]/25 border-t-[#2f7168]" />
+          </div>
+          <h1 className="mt-7 text-xl font-bold">
+            {stage === "uploading" ? "Saving your worksheet" : "Checking your handwriting"}
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-[#71847e]">
+            Your photo is saved. You can put your phone down now.
+          </p>
+          <div className="mt-8 h-2 overflow-hidden rounded-full bg-[#dfe9e4]">
+            <span className="block h-full w-2/3 animate-pulse rounded-full bg-[#2f7168]" />
+          </div>
+        </section>
+      </main>
+    );
+  }
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#18201f] text-white">
       <video
@@ -212,13 +232,12 @@ function CameraContent() {
       </div>
       <div className="absolute inset-x-0 bottom-10 z-10 flex flex-col items-center">
         <button
-          disabled={stage !== "idle"}
           onClick={capture}
-          className="grid size-20 place-items-center rounded-full border-4 border-white/60 bg-white p-1 disabled:opacity-60"
+          className="grid size-20 place-items-center rounded-full border-4 border-white/60 bg-white p-1"
         >
           <span className="size-full rounded-full border-2 border-[#d7d7d7] bg-white" />
         </button>
-        <span className="mt-3 text-xs font-semibold">{STAGE_LABEL[stage]}</span>
+        <span className="mt-3 text-xs font-semibold">{STAGE_LABEL.idle}</span>
       </div>
     </main>
   );
