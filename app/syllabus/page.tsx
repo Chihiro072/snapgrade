@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Menu, Printer } from "lucide-react";
+import { ChevronRight, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/app-shell";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -158,15 +158,6 @@ export default function SyllabusPage() {
 
   return (
     <AppShell>
-      <header className="mb-5 flex justify-between">
-        <div>
-          <p className="text-[10px] tracking-wide text-[#90a19c]">
-            MOE {level} SYLLABUS
-          </p>
-          <h1 className="mt-1 text-2xl tracking-tight">Chinese Syllabus</h1>
-        </div>
-        <Menu className="mt-1 text-[#71847e]" size={21} />
-      </header>
       <div className="mb-5 flex gap-2">
         {LEVELS.map((l) => (
             <button
@@ -184,7 +175,7 @@ export default function SyllabusPage() {
       </div>
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-[18px] font-bold">
-          {level} MOE Primary {level.slice(1)} Syllabus
+          MOE Primary {level.slice(1)} Syllabus
         </h2>
         <span className="text-sm text-[#96a5a1]">
           {totalLessonCount ?? "…"} Lessons Total

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, FileText, Menu } from "lucide-react";
+import { ChevronRight, FileText } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/app-shell";
@@ -78,17 +78,6 @@ export default function HistoryPage() {
 
   return (
     <AppShell>
-      <section className="mb-6 flex items-start justify-between">
-        <div>
-          <p className="text-[10px] tracking-wide text-[#90a19c]">
-            YOUR PRACTICE LOG
-          </p>
-          <h1 className="mt-1 text-2xl tracking-tight">History</h1>
-        </div>
-        <button aria-label="History options" className="p-1 text-[#71847e]">
-          <Menu size={21} />
-        </button>
-      </section>
       {attempts === null ? (
         <p className="py-10 text-center text-sm text-[#71847e]">
           {error || "Loading…"}
